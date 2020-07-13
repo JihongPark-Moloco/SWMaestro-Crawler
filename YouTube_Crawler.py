@@ -65,10 +65,11 @@ def getChannelInfo():
     except:
         channel_subscriber_count = -1
 
-    print(channel_title)
-    print(channel_description)
-    print(channel_subscriber_count)
-    print(channel_start_date)
+    # 채널 정보 출력하기
+    # print(channel_title)
+    # print(channel_description)
+    # print(channel_subscriber_count)
+    # print(channel_start_date)
 
     insert_data = pd.DataFrame(
         {'channel_name': [channel_title], 'channel_description': [channel_description],
@@ -251,7 +252,6 @@ def main():
     getChannelInfo()
     scrollDownVideo()
     links = getVideoLinks()
-    print(links)
     startCrawling(links)
     driver.quit()
     toSql()
