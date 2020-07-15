@@ -40,7 +40,7 @@ def getDriver():
     # options.add_argument('headless')
     # options.add_argument('window-size=1920x1080')
     # options.add_argument("disable-gpu")
-    driver = Chrome(executable_path="chromedriver")  # ,chrome_options=options
+    driver = Chrome(executable_path="/Users/jun/juny/swm/crawler/muna-crawler/chromedriver")  # ,chrome_options=options
 
 
 def openWindow(link):
@@ -64,12 +64,6 @@ def getChannelInfo():
         channel_subscriber_count = html.find("yt-formatted-string", {"id": "subscriber-count"}).getText()
     except:
         channel_subscriber_count = -1
-
-    # 채널 정보 출력하기
-    # print(channel_title)
-    # print(channel_description)
-    # print(channel_subscriber_count)
-    # print(channel_start_date)
 
     insert_data = pd.DataFrame(
         {'channel_name': [channel_title], 'channel_description': [channel_description],
