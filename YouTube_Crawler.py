@@ -15,17 +15,31 @@ import re
 
 channel_savedata = pd.DataFrame({'channel_name': [],
                                  'channel_description': [],
-                                 'channel_subscriber_count': [],
+                                 'channel_addr':[],
+                                 'channel_owner':[],
+                                 'need_process':[],
+                                 'subscriber_num':[],
                                  'channel_start_date': []})
+
+video_hits_savedata=pd.DataFrame({'video_idx':[],
+                                  'hits':[],
+                                  'check_date':[]})
+video_likes_savedata=pd.DataFrame({'video_idx':[],
+                                   'likes':[],
+                                   'check_date'})                                              
 video_savedata = pd.DataFrame({'video_name': [],
                                'video_description': [],
-                               'hits': [],
                                'video_addr': [],
+                               'channel_idx':[],
+                               'need_process':[],
                                'upload_date': []})
 comment_savedata = pd.DataFrame({'comment_content': [],
-                                 'goods': [],
+                                 'video_idx':[],
+                                 'need_process':[]
                                  'write_date': []})
-
+comment_likes_savedata = pd.DataFrame({'comment_idx':[],
+                                       'likes':[],
+                                       'check_date':[]})
 topComment_savedata = pd.DataFrame({''})
 driver = None
 
@@ -49,11 +63,11 @@ def openWindow(link):
     driver.implicitly_wait(2)
 
 
-def getChannelInfo():
+def getChannelInfo(link):
     global channel_savedata
 
     driver.find_elements_by_xpath('//*[@id="tabsContent"]/paper-tab[6]')[0].click()
-    time.sleep(1)
+    driver.implicitly_wait(2)
     html = BeautifulSoup(driver.page_source, 'html.parser')
     channel_title = html.find("yt-formatted-string", {"id": "text", "class": "ytd-channel-name"}).getText()
     channel_description = html.find("yt-formatted-string", {"id": "description"}).getText()
@@ -66,8 +80,8 @@ def getChannelInfo():
         channel_subscriber_count = -1
 
     insert_data = pd.DataFrame(
-        {'channel_name': [channel_title], 'channel_description': [channel_description],
-         'channel_subscriber_count': [channel_subscriber_count], 'channel_start_date': [channel_start_date]})
+        {'channel_name': [channel_title],'channel_addr':[link] 'channel_description': [channel_description],
+         'channel_owner':[],'channel_start_date': [channel_start_date],'subscriber_num':[channel_subscriber_count],'need_process':[]})
 
     channel_savedata = channel_savedata.append(insert_data)
 
@@ -75,12 +89,12 @@ def getChannelInfo():
 def scrollDownVideo():
     driver.find_elements_by_xpath('//*[@id="tabsContent"]/paper-tab[2]')[0].click()
     body = driver.find_element_by_tag_name('body')
-    time.sleep(3)
+    driver.implicitly_wait(2)
 
     # 동영상 모두 스크롤 다운
     SCROLL_PAUSE_TIME = 0.3
     body.send_keys(Keys.END)
-    time.sleep(2)
+    driver.implicitly_wait(2)
     last_height = driver.execute_script(
         'return document.querySelector("#page-manager > ytd-browse:nth-child(1)").scrollHeight;')
 
@@ -90,7 +104,7 @@ def scrollDownVideo():
         time.sleep(SCROLL_PAUSE_TIME)
 
         # Wait to load page
-        time.sleep(1.5)
+        driver.implicitly_wait(2)
 
         # Calculate new scroll height and compare with last scroll height
         new_height = driver.execute_script(
@@ -106,9 +120,9 @@ def scrollDownComment():
     SCROLL_PAUSE_TIME = 0.3
     # Get scroll height
     # 댓글을 나오게 하기위에 임의적으로 키다운 한번.
-    time.sleep(2)
+    driver.implicitly_wait(2)
     body.send_keys(Keys.END)
-    time.sleep(1.5)
+    driver.implicitly_wait(2)
 
     try:
         driver.find_elements_by_xpath(
@@ -122,14 +136,14 @@ def scrollDownComment():
         # Scroll down to bottom
         body.send_keys(Keys.END)
         # Wait to load page
-        time.sleep(1.5)
+        driver.implicitly_wait(2)
         # Calculate new scroll height and compare with last scroll height
         new_height = driver.execute_script("return document.querySelector('#primary').scrollHeight;")
         if new_height == last_height:
             break
         last_height = new_height
     # 참조 : https://stackoverflow.com/a/28928684/1316860
-    time.sleep(1.5)
+    driver.implicitly_wait(2)
 
 
 def showReply():
@@ -147,7 +161,7 @@ def showReply():
                 i.send_keys(Keys.ENTER)
             except:
                 continue
-        time.sleep(1)
+        driver.implicitly_wait(1)
 
 
 def getVideoLinks():
@@ -213,7 +227,7 @@ def startCrawling(links):
         start_url = links[number_of_url]
         driver.get(start_url)
         scrollDownComment()
-        time.sleep(1.5)
+        driver.implicitly_wait(2)
         # showReply()
         saveData(start_url)
     comment_savedata.to_csv("comment_log.csv", index=False)
@@ -226,6 +240,21 @@ def toSql():
     global video_savedata
     engine = create_engine(
         "postgresql://muna:muna112358!@ec2-13-124-107-195.ap-northeast-2.compute.amazonaws.com:5432/test")
+    channel_savedata.to_sql(name='video',
+                          con=engine,
+                          if_exists='append',
+                          index=False,
+                          dtype={
+                              'channel_name':sqlalchemy.types.VARCHAR(45),
+                              'channel_description': sqlalchemy.types.VARCHAR(50),
+                              'channel_addr': sqlalchemy.types.VARCHAR(500),
+                              'channel_owner': sqlalchemy.types.VARCHAR(100),
+                              'subscriber_num':sqlalchemy.types.INTEGER(),
+                              'channel_start_date': sqlalchemy.DateTime(),
+                              'need_process':sqlalchemy.types.BOOLEAN(),
+                              'check_date':sqlalchemy.DateTime()
+                          })
+
     video_savedata.to_sql(name='video',
                           con=engine,
                           if_exists='append',
@@ -233,9 +262,11 @@ def toSql():
                           dtype={
                               'video_name': sqlalchemy.types.VARCHAR(50),
                               'video_description': sqlalchemy.types.VARCHAR(500),
-                              'hits': sqlalchemy.types.VARCHAR(50),
+                              'channel_idx': sqlalchemy.types.INTEGER(),
                               'video_addr': sqlalchemy.types.VARCHAR(100),
-                              'upload_date': sqlalchemy.DateTime()
+                              'upload_date': sqlalchemy.DateTime(),
+                              'need_process':sqlalchemy.types.BOOLEAN()
+
                           })
 
 
@@ -243,7 +274,7 @@ def main():
     link = getCrawlingLink()
     getDriver()
     openWindow(link)
-    getChannelInfo()
+    getChannelInfo(link)
     scrollDownVideo()
     links = getVideoLinks()
     startCrawling(links)
