@@ -215,7 +215,7 @@ def saveData(start_url):
 
     video_url = start_url
     insert_data = pd.DataFrame(
-        {'video_name': [name], 'hits': [view], 'upload_date': [start_date], 'video_description': [thumbnail],
+        {'video_name': [name],'channel_idx':[],'need_process':[] 'upload_date': [start_date], 'video_description': [thumbnail],
          'video_addr': [video_url]})
     video_savedata = video_savedata.append(insert_data)
 
