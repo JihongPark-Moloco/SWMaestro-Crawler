@@ -15,31 +15,31 @@ import re
 
 channel_savedata = pd.DataFrame({'channel_name': [],
                                  'channel_description': [],
-                                 'channel_addr':[],
-                                 'channel_owner':[],
-                                 'need_process':[],
-                                 'subscriber_num':[],
+                                 'channel_addr': [],
+                                 'channel_owner': [],
+                                 'need_process': [],
+                                 'subscriber_num': [],
                                  'channel_start_date': []})
 
-video_hits_savedata=pd.DataFrame({'video_idx':[],
-                                  'hits':[],
-                                  'check_date':[]})
-video_likes_savedata=pd.DataFrame({'video_idx':[],
-                                   'likes':[],
-                                   'check_date'})                                              
+video_hits_savedata = pd.DataFrame({'video_idx': [],
+                                    'hits': [],
+                                    'check_date': []})
+video_likes_savedata = pd.DataFrame({'video_idx': [],
+                                     'likes': [],
+                                     'check_date': ""})
 video_savedata = pd.DataFrame({'video_name': [],
                                'video_description': [],
                                'video_addr': [],
-                               'channel_idx':[],
-                               'need_process':[],
+                               'channel_idx': [],
+                               'need_process': [],
                                'upload_date': []})
 comment_savedata = pd.DataFrame({'comment_content': [],
-                                 'video_idx':[],
-                                 'need_process':[]
+                                 'video_idx': [],
+                                 'need_process': [],
                                  'write_date': []})
-comment_likes_savedata = pd.DataFrame({'comment_idx':[],
-                                       'likes':[],
-                                       'check_date':[]})
+comment_likes_savedata = pd.DataFrame({'comment_idx': [],
+                                       'likes': [],
+                                       'check_date': []})
 topComment_savedata = pd.DataFrame({''})
 driver = None
 
@@ -80,8 +80,9 @@ def getChannelInfo(link):
         channel_subscriber_count = -1
 
     insert_data = pd.DataFrame(
-        {'channel_name': [channel_title],'channel_addr':[link] 'channel_description': [channel_description],
-         'channel_owner':[],'channel_start_date': [channel_start_date],'subscriber_num':[channel_subscriber_count],'need_process':[]})
+        {'channel_name': [channel_title], 'channel_addr': [link], 'channel_description': [channel_description],
+         'channel_owner': [], 'channel_start_date': [channel_start_date], 'subscriber_num': [channel_subscriber_count],
+         'need_process': []})
 
     channel_savedata = channel_savedata.append(insert_data)
 
@@ -215,7 +216,8 @@ def saveData(start_url):
 
     video_url = start_url
     insert_data = pd.DataFrame(
-        {'video_name': [name],'channel_idx':[],'need_process':[] 'upload_date': [start_date], 'video_description': [thumbnail],
+        {'video_name': [name], 'channel_idx': [], 'need_process': [], 'upload_date': [start_date],
+         'video_description': [thumbnail],
          'video_addr': [video_url]})
     video_savedata = video_savedata.append(insert_data)
 
@@ -241,19 +243,19 @@ def toSql():
     engine = create_engine(
         "postgresql://muna:muna112358!@ec2-13-124-107-195.ap-northeast-2.compute.amazonaws.com:5432/test")
     channel_savedata.to_sql(name='video',
-                          con=engine,
-                          if_exists='append',
-                          index=False,
-                          dtype={
-                              'channel_name':sqlalchemy.types.VARCHAR(45),
-                              'channel_description': sqlalchemy.types.VARCHAR(50),
-                              'channel_addr': sqlalchemy.types.VARCHAR(500),
-                              'channel_owner': sqlalchemy.types.VARCHAR(100),
-                              'subscriber_num':sqlalchemy.types.INTEGER(),
-                              'channel_start_date': sqlalchemy.DateTime(),
-                              'need_process':sqlalchemy.types.BOOLEAN(),
-                              'check_date':sqlalchemy.DateTime()
-                          })
+                            con=engine,
+                            if_exists='append',
+                            index=False,
+                            dtype={
+                                'channel_name': sqlalchemy.types.VARCHAR(45),
+                                'channel_description': sqlalchemy.types.VARCHAR(50),
+                                'channel_addr': sqlalchemy.types.VARCHAR(500),
+                                'channel_owner': sqlalchemy.types.VARCHAR(100),
+                                'subscriber_num': sqlalchemy.types.INTEGER(),
+                                'channel_start_date': sqlalchemy.DateTime(),
+                                'need_process': sqlalchemy.types.BOOLEAN(),
+                                'check_date': sqlalchemy.DateTime()
+                            })
 
     video_savedata.to_sql(name='video',
                           con=engine,
@@ -265,7 +267,7 @@ def toSql():
                               'channel_idx': sqlalchemy.types.INTEGER(),
                               'video_addr': sqlalchemy.types.VARCHAR(100),
                               'upload_date': sqlalchemy.DateTime(),
-                              'need_process':sqlalchemy.types.BOOLEAN()
+                              'need_process': sqlalchemy.types.BOOLEAN()
 
                           })
 
