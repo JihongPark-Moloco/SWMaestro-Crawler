@@ -36,7 +36,7 @@ comment_savedata = pd.DataFrame(columns=['video_url',
 driver = None
 logf = None
 link = None
-
+returnData=None
 
 def log(text):
     global logf
@@ -185,7 +185,7 @@ def getVideoLinks():
 def saveData(start_url):
     global comment_savedata
     global video_savedata
-
+    global returnData
     html_s0 = driver.page_source
     html_s = BeautifulSoup(html_s0, 'html.parser')
 
@@ -266,7 +266,8 @@ def startCrawling(links):
     comment_savedata.to_csv("comment_log.csv", index=False)
     video_savedata.to_csv("video_log.csv", index=False)
     channel_savedata.to_csv("channel_log.csv", index=False)
-
+    returnData=[comment_savedata,video_savedata,channel_savedata]
+    
     #
     # def toSql():
     #     global comment_savedata
@@ -303,10 +304,10 @@ def startCrawling(links):
     #                           })
 
 
-def main():
+def main(LINK):
     # link = getCrawlingLink()
     global link
-    link = "https://www.youtube.com/channel/UCvS-d8Ntsny2H8UeINNsQhw"
+    link = LINK
     getDriver()
     openWindow(link)
     getChannelInfo(link)
@@ -314,9 +315,10 @@ def main():
     links = getVideoLinks()
     startCrawling(links)
     driver.quit()
+    return returnData
     # toSql()
 
 
-main()
+main(LINK)
 # if __name__ == "__main__":
 #     main()
