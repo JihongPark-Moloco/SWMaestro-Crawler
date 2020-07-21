@@ -1,42 +1,40 @@
 #!/usr/bin/env python
 
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver import Chrome
-from selenium.webdriver import ChromeOptions
 from bs4 import BeautifulSoup
 import time
 import pandas as pd
 from selenium.webdriver.support.ui import WebDriverWait
-from sqlalchemy import create_engine
-import sqlalchemy
+import psycopg2 as pg2
 import re
 
 channel_savedata = pd.DataFrame(columns=['channel_name',
                                          'channel_description',
                                          'channel_url',
                                          'subscriber_num',
-                                         'channel_start_date'])
+                                         'channel_start_date',
+                                         'check_time'])
 
 video_savedata = pd.DataFrame(columns=['video_name',
                                        'video_description',
                                        'video_url',
-                                       'upload_date',
+                                       'upload_time',
                                        'likes',
                                        'dislikes',
-                                       'check_date',
+                                       'check_time',
                                        'views'])
 
 comment_savedata = pd.DataFrame(columns=['video_url',
                                          'comment_content',
                                          'likes',
-                                         'check_date',
-                                         'write_date'])
+                                         'check_time',
+                                         'write_time'])
 
 driver = None
 logf = None
 link = None
-returnData=None
+
 
 def log(text):
     global logf
@@ -48,8 +46,8 @@ def log(text):
     logf.write(text)
 
 
-def getCrawlingLink():
-    return input("링크를 입력해주세요.")
+# def getCrawlingLink():
+#     return input("링크를 입력해주세요.")
 
 
 def getDriver():
@@ -93,7 +91,8 @@ def getChannelInfo(link):
                                                                    'channel_url': link,
                                                                    'channel_description': channel_description,
                                                                    'channel_start_date': channel_start_date,
-                                                                   'subscriber_num': channel_subscriber_count}])],
+                                                                   'subscriber_num': channel_subscriber_count,
+                                                                   'check_time': time.time()}])],
                                  ignore_index=True)
 
 
@@ -103,7 +102,6 @@ def scrollDownVideo():
     WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath('// *[ @ id = "dismissable"]'))
 
     # 동영상 모두 스크롤 다운
-    # SCROLL_PAUSE_TIME = 0.3
     def check_scrolled(driver):
         nonlocal current_height
         return driver.execute_script(
@@ -216,8 +214,8 @@ def saveData(start_url):
         comment_savedata = pd.concat([comment_savedata, pd.DataFrame([{'video_url': start_url,
                                                                        'comment_content': comment_content,
                                                                        'likes': goods,
-                                                                       'check_date': time.time(),
-                                                                       'write_date': write_date}])], ignore_index=True)
+                                                                       'check_time': time.time(),
+                                                                       'write_time': write_date}])], ignore_index=True)
 
     name = driver.find_elements_by_xpath('//*[@id="container"]/h1/yt-formatted-string')[0].text
     start_date = driver.find_elements_by_xpath('//*[@id="date"]/yt-formatted-string')[0].text
@@ -232,7 +230,8 @@ def saveData(start_url):
 
     try:
         driver.find_element_by_tag_name('body').send_keys(Keys.HOME)
-        driver.find_element_by_xpath('/html/body/ytd-app/div/ytd-page-manager/ytd-watch-flexy/div[4]/div[1]/div/div[8]/div[3]/ytd-video-secondary-info-renderer/div/ytd-expander/paper-button[2]/yt-formatted-string').click()
+        driver.find_element_by_xpath(
+            '/html/body/ytd-app/div/ytd-page-manager/ytd-watch-flexy/div[4]/div[1]/div/div[8]/div[3]/ytd-video-secondary-info-renderer/div/ytd-expander/paper-button[2]/yt-formatted-string').click()
     except:
         pass
 
@@ -246,10 +245,10 @@ def saveData(start_url):
     video_savedata = pd.concat([video_savedata, pd.DataFrame([{'video_name': name,
                                                                'video_description': description,
                                                                'video_url': start_url,
-                                                               'upload_date': start_date,
+                                                               'upload_time': start_date,
                                                                'likes': likes,
                                                                'dislikes': dislikes,
-                                                               'check_date': time.time(),
+                                                               'check_time': time.time(),
                                                                'views': views}])], ignore_index=True)
 
 
@@ -263,62 +262,97 @@ def startCrawling(links):
         scrollDownComment()
         # showReply()
         saveData(start_url)
-    comment_savedata.to_csv("comment_log.csv", index=False)
-    video_savedata.to_csv("video_log.csv", index=False)
-    channel_savedata.to_csv("channel_log.csv", index=False)
-    returnData=[comment_savedata,video_savedata,channel_savedata]
-    
-    #
-    # def toSql():
-    #     global comment_savedata
-    #     global video_savedata
-    #     engine = create_engine(
-    #         "postgresql://muna:muna112358!@ec2-13-124-107-195.ap-northeast-2.compute.amazonaws.com:5432/test")
-    #     channel_savedata.to_sql(name='video',
-    #                             con=engine,
-    #                             if_exists='append',
-    #                             index=False,
-    #                             dtype={
-    #                                 'channel_name': sqlalchemy.types.VARCHAR(45),
-    #                                 'channel_description': sqlalchemy.types.VARCHAR(50),
-    #                                 'channel_addr': sqlalchemy.types.VARCHAR(500),
-    #                                 'channel_owner': sqlalchemy.types.VARCHAR(100),
-    #                                 'subscriber_num': sqlalchemy.types.INTEGER(),
-    #                                 'channel_start_date': sqlalchemy.DateTime(),
-    #                                 'need_process': sqlalchemy.types.BOOLEAN(),
-    #                                 'check_date': sqlalchemy.DateTime()
-    #                             })
-    #
-    #     video_savedata.to_sql(name='video',
-    #                           con=engine,
-    #                           if_exists='append',
-    #                           index=False,
-    #                           dtype={
-    #                               'video_name': sqlalchemy.types.VARCHAR(50),
-    #                               'video_description': sqlalchemy.types.VARCHAR(500),
-    #                               'channel_idx': sqlalchemy.types.INTEGER(),
-    #                               'video_addr': sqlalchemy.types.VARCHAR(100),
-    #                               'upload_date': sqlalchemy.DateTime(),
-    #                               'need_process': sqlalchemy.types.BOOLEAN()
-    #
-    #                           })
+
+
+def toSql():
+    global channel_savedata, video_savedata, comment_savedata
+
+    conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="13.124.107.195", port="5432")
+    conn.autocommit = False
+    cur = conn.cursor()
+
+    # 채널 정보 저장 sql
+    for index, row in channel_savedata.iterrows():
+        cur.execute(f"""SELECT idx FROM channel WHERE channel_url='{row["channel_url"]}';""")
+        channel_idx = cur.fetchall()[0][0]
+
+        sql = \
+            f"""UPDATE channel
+                SET channel_name        = '{row["channel_name"]}',
+                    channel_description = '{row["channel_description"]}',
+                    channel_start_date  = to_date('{row["channel_start_date"]}', 'YYYY. MM. DD.')
+                WHERE idx = {channel_idx};
+
+                INSERT INTO channel_subscriber (channel_idx, subscriber_num, check_time)
+                VALUES ({channel_idx}, '{row["subscriber_num"]}', to_timestamp({row["check_time"]}) + interval '9 hour');"""
+        cur.execute(sql)
+
+    # 비디오 정보 저장
+    for index, row in video_savedata.iterrows():
+        views = re.sub(",", "", (row['views'])[:-1].split(" ")[1])
+
+        sql = f"""INSERT INTO video (video_name, video_description, video_url, upload_time, channel_idx)
+                  VALUES ('{row["video_name"]}', '{row["video_description"]}', '{row["video_url"]}', to_timestamp('{row["upload_time"]}', 'YYYY. MM. DD.'), '{channel_idx}')
+                  RETURNING idx"""
+        cur.execute(sql)
+        video_idx = cur.fetchall()[0][0]
+
+        sql = f"""INSERT INTO video_likes (video_idx, likes, check_time, dislikes) 
+                  VALUES ('{video_idx}', '{row["likes"]}', to_timestamp({row["check_time"]}) + interval '9 hour', {row["dislikes"]});
+                  INSERT INTO video_views (video_idx, views, check_time) 
+                  VALUES ('{video_idx}', '{views}', to_timestamp({row["check_time"]}) + interval '9 hour');"""
+        cur.execute(sql)
+
+    # 댓글 정보 저장
+    for index, row in comment_savedata.iterrows():
+        write_time = row["write_time"]
+
+        if "(수정됨)" in write_time:
+            write_time = write_time[:-5]
+
+        if write_time[-3:] == "분 전":
+            interval_time = f"{write_time[:write_time.find('분')]} minute"
+        elif write_time[-3:] == "간 전":
+            interval_time = f"{write_time[:write_time.find('간')]} hour"
+        elif write_time[-3:] == "일 전":
+            interval_time = f"{write_time[:write_time.find('일')]} day"
+        elif write_time[-3:] == "주 전":
+            interval_time = f"{write_time[:write_time.find('주')]} week"
+        elif write_time[-3:] == "월 전":
+            interval_time = f"{write_time[:write_time.find('월')]} month"
+        elif write_time[-3:] == "년 전":
+            interval_time = f"{write_time[:write_time.find('년')]} year"
+
+        sql = f"""SELECT idx FROM video WHERE video_url='{row["video_url"]}'"""
+        cur.execute(sql)
+        video_idx = cur.fetchall()[0][0]
+
+        sql = f"""INSERT INTO comment (video_idx, comment_content, write_time) 
+                  VALUES ('{video_idx}', '{row["comment_content"]}', to_timestamp({row["check_time"]}) + interval '9 hour' - interval '{interval_time}')
+                  RETURNING idx;"""
+        cur.execute(sql)
+        comment_idx = cur.fetchall()[0][0]
+
+        sql = f"""INSERT INTO comment_likes (comment_idx, likes, check_time) 
+                  VALUES ('{comment_idx}', '{row["likes"]}', to_timestamp({row["check_time"]}) + interval '9 hour');"""
+        cur.execute(sql)
+
+    conn.commit()
 
 
 def main(LINK):
     # link = getCrawlingLink()
-    global link
-    link = LINK
-    getDriver()
-    openWindow(link)
-    getChannelInfo(link)
-    scrollDownVideo()
-    links = getVideoLinks()
-    startCrawling(links)
-    driver.quit()
-    return returnData
-    # toSql()
-
-
-main(LINK)
-# if __name__ == "__main__":
-#     main()
+    try:
+        global link
+        link = LINK
+        getDriver()
+        openWindow(link)
+        getChannelInfo(link)
+        scrollDownVideo()
+        links = getVideoLinks()
+        startCrawling(links)
+        driver.quit()
+        toSql()
+        return True
+    except:
+        return False
