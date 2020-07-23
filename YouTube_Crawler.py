@@ -207,20 +207,23 @@ def saveData(start_url):
                                                {'id': 'content-text',
                                                 'class': 'style-scope ytd-comment-renderer'}).text
             comment_content = re.sub('\n', ' ', comment_content)
-        except:
+        except Exception as e:
             log(f'video({start_url}) comment#{i} raise comment_content except')
+            log(e)
             continue
         try:
             write_date = comment0[i].find('a', {'class': 'yt-simple-endpoint style-scope yt-formatted-string'}).text
-        except:
+        except Exception as e:
             log(f'video({start_url}) comment#{i} has no write date except')
+            log(e)
             write_date = "null"
         try:
             likenum_text = comment0[i].find('span', {'id': 'vote-count-left'}).text
             goods = "".join(re.findall('[0-9]', likenum_text))
-        except:
+        except Exception as e:
             goods = 0
             log(f'video({start_url}) comment#{i} likenum makes except')
+            log(e)
 
         comment_savedata = pd.concat([comment_savedata, pd.DataFrame([{'video_url': start_url,
                                                                        'comment_content': comment_content,
@@ -253,8 +256,9 @@ def saveData(start_url):
     try:
         description = driver.find_element_by_xpath('//*[@id="description"]/yt-formatted-string').text
         description = re.sub('\n', ' ', description)
-    except:
+    except Exception as e:
         log(f'video({start_url}) makes no description exception')
+        log(e)
         description = "null"
 
     video_savedata = pd.concat([video_savedata, pd.DataFrame([{'video_name': name,
@@ -361,8 +365,9 @@ def main(LINK):
         driver.quit()
         toSql()
         return True
-    except:
+    except Exception as e:
         log(f'Crawler Error on {LINK}')
+        log(e)
         return False
 
 
