@@ -349,17 +349,21 @@ def toSql():
 
 
 def main(LINK):
-    global link
-    link = LINK
-    getDriver()
-    openWindow(link)
-    getChannelInfo(link)
-    scrollDownVideo()
-    links = getVideoLinks()
-    startCrawling(links)
-    driver.quit()
-    toSql()
-    return True
+    try:
+        global link
+        link = LINK
+        getDriver()
+        openWindow(link)
+        getChannelInfo(link)
+        scrollDownVideo()
+        links = getVideoLinks()
+        startCrawling(links)
+        driver.quit()
+        toSql()
+        return True
+    except:
+        log(f'Crawler Error on {LINK}')
+        return False
 
 
 if __name__ == '__main__':
