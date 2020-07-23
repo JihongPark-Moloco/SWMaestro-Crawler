@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver import Chrome
@@ -50,11 +50,11 @@ def log(text):
 def getDriver():
     global driver
     options = ChromeOptions()
-    options.add_argument('headless')
+    options.add_argument('--headless')
     options.add_argument('--window-size=1920,1080')
     # options.add_argument("disable-gpu")
-    driver = Chrome(executable_path="chromedriver_84_win.exe", options=options)  # ,chrome_options=options
-    driver.set_window_size(1920, 1080)
+    driver = Chrome(executable_path="/home/ubuntu/Crawler/chromedriver", options=options)  # ,chrome_options=options
+    #driver.set_window_size(1920, 1080)
 
 
 def openWindow(link):
