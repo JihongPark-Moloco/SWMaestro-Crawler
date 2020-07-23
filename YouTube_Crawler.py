@@ -1,7 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver import Chrome
+from selenium.webdriver import ChromeOptions
 from bs4 import BeautifulSoup
 import time
 import pandas as pd
@@ -46,40 +47,50 @@ def log(text):
     logf.write(text)
 
 
-# def getCrawlingLink():
-#     return input("링크를 입력해주세요.")
-
-
 def getDriver():
     global driver
-    # options = ChromeOptions()
-    # options.add_argument('headless')
-    # options.add_argument('window-size=1920x1080')
+    options = ChromeOptions()
+    options.add_argument('headless')
+    options.add_argument('--window-size=1920,1080')
     # options.add_argument("disable-gpu")
-    driver = Chrome(executable_path="chromedriver_84_win.exe")  # ,chrome_options=options
+    driver = Chrome(executable_path="chromedriver_84_win.exe", options=options)  # ,chrome_options=options
+    driver.set_window_size(1920, 1080)
 
 
 def openWindow(link):
     # driver.maximize_window()
+    global driver
     driver.get(link)
+    print("A")
     driver.implicitly_wait(5)
+    driver.delete_cookie('PREF')
+    driver.add_cookie({'domain': '.youtube.com', 'httpOnly': False,
+                       'name': 'PREF',
+                       'value': 'gl=US&hl=en',
+                       'path': '/'})
 
 
 def getChannelInfo(link):
+    print(link)
     global channel_savedata
+    global driver
 
     driver.find_elements_by_xpath('//*[@id="tabsContent"]/paper-tab[6]')[0].click()
     WebDriverWait(driver, 3).until(lambda x: x.find_element_by_id("description-container"))
     html = BeautifulSoup(driver.page_source, 'html.parser')
     channel_title = html.find("yt-formatted-string", {"id": "text", "class": "ytd-channel-name"}).getText()
+    print(channel_title)
     try:
         channel_description = html.find("yt-formatted-string", {"id": "description"}).getText()
         channel_description = re.sub('\n', ' ', channel_description)
     except:
         log("channel description is empty")
-
-    channel_start_date = re.search("[0-9]{4}[.] *[0-9]{1,2}[.] *[0-9]{1,2}[.] *",
-                                   str(html.find("div", {"id": "right-column"}))).group(0)
+    try:
+        channel_start_date = re.search("[A-Z]{1}[a-z]{2} [0-9]{1,2}[,] [0-9]{4}",
+                                       str(html.find("div", {"id": "right-column"}))).group(0)
+    except:
+        channel_start_date = "아직몰라"
+    print(channel_start_date)
 
     try:
         channel_subscriber_count = html.find("yt-formatted-string", {"id": "subscriber-count"}).getText()
@@ -94,9 +105,11 @@ def getChannelInfo(link):
                                                                    'subscriber_num': channel_subscriber_count,
                                                                    'check_time': time.time()}])],
                                  ignore_index=True)
+    print(channel_savedata)
 
 
 def scrollDownVideo():
+    global driver
     driver.find_elements_by_xpath('//*[@id="tabsContent"]/paper-tab[2]')[0].click()
     body = driver.find_element_by_tag_name('body')
     WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath('// *[ @ id = "dismissable"]'))
@@ -107,15 +120,15 @@ def scrollDownVideo():
         return driver.execute_script(
             'return document.querySelector("#page-manager > ytd-browse:nth-child(1)").scrollHeight;') != current_height
 
-    end_time = time.time() + 2
+    end_time = time.time() + 3
 
     while time.time() < end_time:
-        end_time = time.time() + 2
+        end_time = time.time() + 3
         current_height = driver.execute_script(
             'return document.querySelector("#page-manager > ytd-browse:nth-child(1)").scrollHeight;')
         body.send_keys(Keys.END)
         try:
-            WebDriverWait(driver, 3).until(check_scrolled)
+            WebDriverWait(driver, 4).until(check_scrolled)
         except:
             pass
 
@@ -123,12 +136,10 @@ def scrollDownVideo():
 def scrollDownComment():
     body = driver.find_element_by_tag_name('body')
 
-    body.send_keys(Keys.END)
-    time.sleep(0.5)
-    body.send_keys(Keys.END)
-    time.sleep(0.5)
-    body.send_keys(Keys.END)
-    time.sleep(0.5)
+    body.send_keys(Keys.PAGE_DOWN)
+    time.sleep(1)
+    body.send_keys(Keys.PAGE_DOWN)
+    time.sleep(1)
     body.send_keys(Keys.END)
 
     WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath('//*[@id="content-text"]'))
@@ -137,14 +148,14 @@ def scrollDownComment():
         nonlocal current_height
         return driver.execute_script("return document.querySelector('#primary').scrollHeight;") != current_height
 
-    end_time = time.time() + 2
+    end_time = time.time() + 3
 
     while time.time() < end_time:
-        end_time = time.time() + 2
+        end_time = time.time() + 3
         current_height = driver.execute_script("return document.querySelector('#primary').scrollHeight;")
         body.send_keys(Keys.END)
         try:
-            WebDriverWait(driver, 3).until(check_scrolled)
+            WebDriverWait(driver, 4).until(check_scrolled)
         except:
             pass
 
@@ -230,10 +241,14 @@ def saveData(start_url):
 
     try:
         driver.find_element_by_tag_name('body').send_keys(Keys.HOME)
-        driver.find_element_by_xpath(
-            '/html/body/ytd-app/div/ytd-page-manager/ytd-watch-flexy/div[4]/div[1]/div/div[8]/div[3]/ytd-video-secondary-info-renderer/div/ytd-expander/paper-button[2]/yt-formatted-string').click()
+        time.sleep(1.0)
+        driver.find_element_by_tag_name('body').send_keys(Keys.PAGE_DOWN)
+        time.sleep(0.5)
+        driver.find_element_by_xpath('//*[@id="more"]/yt-formatted-string').click()
     except:
-        pass
+        print("do not find a show button")
+        print(start_url)
+        # print(html_s0)
 
     try:
         description = driver.find_element_by_xpath('//*[@id="description"]/yt-formatted-string').text
@@ -264,8 +279,16 @@ def startCrawling(links):
         saveData(start_url)
 
 
+def pre_process(text):
+    return re.sub("'", "''", text)
+
+
 def toSql():
     global channel_savedata, video_savedata, comment_savedata
+
+    channel_savedata.to_csv('channel_savedata.csv')
+    video_savedata.to_csv('video_savedata')
+    comment_savedata.to_csv('comment_savedata.csv')
 
     conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="13.124.107.195", port="5432")
     conn.autocommit = False
@@ -275,12 +298,11 @@ def toSql():
     for index, row in channel_savedata.iterrows():
         cur.execute(f"""SELECT idx FROM channel WHERE channel_url='{row["channel_url"]}';""")
         channel_idx = cur.fetchall()[0][0]
-
         sql = \
             f"""UPDATE channel
-                SET channel_name        = '{row["channel_name"]}',
-                    channel_description = '{row["channel_description"]}',
-                    channel_start_date  = to_date('{row["channel_start_date"]}', 'YYYY. MM. DD.')
+                SET channel_name        = '{pre_process(row["channel_name"])}',
+                    channel_description = '{pre_process(row["channel_description"])}',
+                    channel_start_date  = to_date('{row["channel_start_date"]}', 'Mon DD, YYYY')
                 WHERE idx = {channel_idx};
 
                 INSERT INTO channel_subscriber (channel_idx, subscriber_num, check_time)
@@ -289,10 +311,10 @@ def toSql():
 
     # 비디오 정보 저장
     for index, row in video_savedata.iterrows():
-        views = re.sub(",", "", (row['views'])[:-1].split(" ")[1])
+        views = re.sub(",", "", (row['views'])[:-5])
 
         sql = f"""INSERT INTO video (video_name, video_description, video_url, upload_time, channel_idx)
-                  VALUES ('{row["video_name"]}', '{row["video_description"]}', '{row["video_url"]}', to_timestamp('{row["upload_time"]}', 'YYYY. MM. DD.'), '{channel_idx}')
+                  VALUES ('{pre_process(row["video_name"])}', '{pre_process(row["video_description"])}', '{row["video_url"]}', to_timestamp('{row["upload_time"]}', 'Mon DD, YYYY'), '{channel_idx}')
                   RETURNING idx"""
         cur.execute(sql)
         video_idx = cur.fetchall()[0][0]
@@ -307,28 +329,14 @@ def toSql():
     for index, row in comment_savedata.iterrows():
         write_time = row["write_time"]
 
-        if "(수정됨)" in write_time:
-            write_time = write_time[:-5]
-
-        if write_time[-3:] == "분 전":
-            interval_time = f"{write_time[:write_time.find('분')]} minute"
-        elif write_time[-3:] == "간 전":
-            interval_time = f"{write_time[:write_time.find('간')]} hour"
-        elif write_time[-3:] == "일 전":
-            interval_time = f"{write_time[:write_time.find('일')]} day"
-        elif write_time[-3:] == "주 전":
-            interval_time = f"{write_time[:write_time.find('주')]} week"
-        elif write_time[-3:] == "월 전":
-            interval_time = f"{write_time[:write_time.find('월')]} month"
-        elif write_time[-3:] == "년 전":
-            interval_time = f"{write_time[:write_time.find('년')]} year"
+        interval_time = write_time[:write_time.find(' ago')]
 
         sql = f"""SELECT idx FROM video WHERE video_url='{row["video_url"]}'"""
         cur.execute(sql)
         video_idx = cur.fetchall()[0][0]
 
         sql = f"""INSERT INTO comment (video_idx, comment_content, write_time) 
-                  VALUES ('{video_idx}', '{row["comment_content"]}', to_timestamp({row["check_time"]}) + interval '9 hour' - interval '{interval_time}')
+                  VALUES ('{video_idx}', '{pre_process(row["comment_content"])}', to_timestamp({row["check_time"]}) + interval '9 hour' - interval '{interval_time}')
                   RETURNING idx;"""
         cur.execute(sql)
         comment_idx = cur.fetchall()[0][0]
@@ -341,18 +349,18 @@ def toSql():
 
 
 def main(LINK):
-    # link = getCrawlingLink()
-    try:
-        global link
-        link = LINK
-        getDriver()
-        openWindow(link)
-        getChannelInfo(link)
-        scrollDownVideo()
-        links = getVideoLinks()
-        startCrawling(links)
-        driver.quit()
-        toSql()
-        return True
-    except:
-        return False
+    global link
+    link = LINK
+    getDriver()
+    openWindow(link)
+    getChannelInfo(link)
+    scrollDownVideo()
+    links = getVideoLinks()
+    startCrawling(links)
+    driver.quit()
+    toSql()
+    return True
+
+
+if __name__ == '__main__':
+    main('https://www.youtube.com/channel/UCvS-d8Ntsny2H8UeINNsQhw')
