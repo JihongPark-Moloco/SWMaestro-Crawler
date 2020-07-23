@@ -44,7 +44,7 @@ def log(text):
     if logf == None:
         logf = open(f'{link[link.rfind("/") + 1:]}.log', 'w')
 
-    logf.write(text)
+    logf.write(str(text))
 
 
 def getDriver():
