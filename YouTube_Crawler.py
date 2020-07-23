@@ -55,7 +55,7 @@ def getDriver():
     options.add_argument('--disable-dev-shm-usage')
     # options.add_argument("disable-gpu")
     driver = Chrome(executable_path="/home/ubuntu/Crawler/chromedriver", options=options)  # ,chrome_options=options
-    #driver.set_window_size(1920, 1080)
+    driver.set_window_size(1920, 1080)
 
 
 def openWindow(link):
