@@ -9,8 +9,8 @@ channel = connection.channel()
 
 
 def callback(ch, method, properties, body):
-    print(" [x] Received %r" % body)
-    if YouTube_Crawler.main(body):
+    print(" [x] Received %r" % body.decode())
+    if YouTube_Crawler.main(body.decode()):
         # 크롤러가 정상 종료 되었을때 ack를 보냅니다. 이때 메세지큐에서 해당 주소가 삭제됩니다.
         ch.basic_ack(delivery_tag=method.delivery_tag)
     else:
