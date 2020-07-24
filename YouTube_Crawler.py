@@ -42,9 +42,9 @@ def log(text):
     global link
 
     if logf == None:
-        logf = open(f'{link[link.rfind("/") + 1:]}.log', 'w')
+        logf = open(f'./logs/{link[link.rfind("/") + 1:]}.log', 'w')
 
-    logf.write(str(text))
+    logf.write(str(text) + '\n')
 
 
 def getDriver():
@@ -76,7 +76,7 @@ def getChannelInfo(link):
     global channel_savedata
     global driver
 
-    driver.find_elements_by_xpath('//*[@id="tabsContent"]/paper-tab[6]')[0].click()
+    driver.find_elements_by_xpath('//*[@id="tabsContent"]//*[contains(., "About")]')[0].click()
     WebDriverWait(driver, 3).until(lambda x: x.find_element_by_id("description-container"))
     html = BeautifulSoup(driver.page_source, 'html.parser')
     channel_title = html.find("yt-formatted-string", {"id": "text", "class": "ytd-channel-name"}).getText()
@@ -90,7 +90,7 @@ def getChannelInfo(link):
         channel_start_date = re.search("[A-Z]{1}[a-z]{2} [0-9]{1,2}[,] [0-9]{4}",
                                        str(html.find("div", {"id": "right-column"}))).group(0)
     except:
-        channel_start_date = "아직몰라"
+        log("channel description is empty")
     print(channel_start_date)
 
     try:
@@ -134,7 +134,7 @@ def scrollDownVideo():
             pass
 
 
-def scrollDownComment():
+def scrollDownComment(start_url):
     body = driver.find_element_by_tag_name('body')
 
     body.send_keys(Keys.PAGE_DOWN)
@@ -143,7 +143,11 @@ def scrollDownComment():
     time.sleep(1)
     body.send_keys(Keys.END)
 
-    WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath('//*[@id="content-text"]'))
+    try:
+        WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath('//*[@id="content-text"]'))
+    except:
+        log('no comment')
+        log({start_url})
 
     def check_scrolled(driver):
         nonlocal current_height
@@ -279,7 +283,7 @@ def startCrawling(links):
     for number_of_url in range(len(links)):  # 리스트로 만들어져 있는 url중 한개의 url을 이용 range(len(links))
         start_url = links[number_of_url]
         driver.get(start_url)
-        scrollDownComment()
+        scrollDownComment(start_url)
         # showReply()
         saveData(start_url)
 
@@ -289,73 +293,91 @@ def pre_process(text):
 
 
 def toSql():
-    global channel_savedata, video_savedata, comment_savedata
+    global channel_savedata, video_savedata, comment_savedata, link
 
-    channel_savedata.to_csv('channel_savedata.csv')
-    video_savedata.to_csv('video_savedata')
-    comment_savedata.to_csv('comment_savedata.csv')
+    # channel_savedata.to_csv('channel_savedata.csv')
+    # video_savedata.to_csv('video_savedata')
+    # comment_savedata.to_csv('comment_savedata.csv')
 
     conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="13.124.107.195", port="5432")
     conn.autocommit = False
     cur = conn.cursor()
 
-    # 채널 정보 저장 sql
-    for index, row in channel_savedata.iterrows():
-        cur.execute(f"""SELECT idx FROM channel WHERE channel_url='{row["channel_url"]}';""")
-        channel_idx = cur.fetchall()[0][0]
-        sql = \
-            f"""UPDATE channel
-                SET channel_name        = '{pre_process(row["channel_name"])}',
-                    channel_description = '{pre_process(row["channel_description"])}',
-                    channel_start_date  = to_date('{row["channel_start_date"]}', 'Mon DD, YYYY')
-                WHERE idx = {channel_idx};
+    try:
+        # 채널 정보 저장 sql
+        for index, row in channel_savedata.iterrows():
+            cur.execute(f"""SELECT idx FROM channel WHERE channel_url='{row["channel_url"]}';""")
+            channel_idx = cur.fetchall()[0][0]
+            sql = \
+                f"""UPDATE channel
+                    SET channel_name        = '{pre_process(row["channel_name"])}',
+                        channel_description = '{pre_process(row["channel_description"])}',
+                        channel_start_date  = to_date('{row["channel_start_date"]}', 'Mon DD, YYYY')
+                    WHERE idx = {channel_idx};
+    
+                    INSERT INTO channel_subscriber (channel_idx, subscriber_num, check_time)
+                    VALUES ({channel_idx}, '{row["subscriber_num"]}', to_timestamp({row["check_time"]}) + interval '9 hour');"""
+            cur.execute(sql)
+    except Exception as e:
+        log(e)
+        channel_savedata.to_csv(f'./logs/{link[link.rfind("/") + 1:]}_channel_savedata.csv')
+        raise Exception('channel sql error')
 
-                INSERT INTO channel_subscriber (channel_idx, subscriber_num, check_time)
-                VALUES ({channel_idx}, '{row["subscriber_num"]}', to_timestamp({row["check_time"]}) + interval '9 hour');"""
-        cur.execute(sql)
+    try:
+        # 비디오 정보 저장
+        for index, row in video_savedata.iterrows():
+            views = re.sub(",", "", (row['views'])[:-5])
 
-    # 비디오 정보 저장
-    for index, row in video_savedata.iterrows():
-        views = re.sub(",", "", (row['views'])[:-5])
+            sql = f"""INSERT INTO video (video_name, video_description, video_url, upload_time, channel_idx)
+                      VALUES ('{pre_process(row["video_name"])}', '{pre_process(row["video_description"])}', '{row["video_url"]}', to_timestamp('{row["upload_time"]}', 'Mon DD, YYYY'), '{channel_idx}')
+                      RETURNING idx"""
+            cur.execute(sql)
+            video_idx = cur.fetchall()[0][0]
 
-        sql = f"""INSERT INTO video (video_name, video_description, video_url, upload_time, channel_idx)
-                  VALUES ('{pre_process(row["video_name"])}', '{pre_process(row["video_description"])}', '{row["video_url"]}', to_timestamp('{row["upload_time"]}', 'Mon DD, YYYY'), '{channel_idx}')
-                  RETURNING idx"""
-        cur.execute(sql)
-        video_idx = cur.fetchall()[0][0]
+            sql = f"""INSERT INTO video_likes (video_idx, likes, check_time, dislikes) 
+                      VALUES ('{video_idx}', '{row["likes"]}', to_timestamp({row["check_time"]}) + interval '9 hour', {row["dislikes"]});
+                      INSERT INTO video_views (video_idx, views, check_time) 
+                      VALUES ('{video_idx}', '{views}', to_timestamp({row["check_time"]}) + interval '9 hour');"""
+            cur.execute(sql)
+    except Exception as e:
+        log(e)
+        video_savedata.to_csv(f'./logs/{link[link.rfind("/") + 1:]}_video_savedata.csv')
+        raise Exception('video sql error')
 
-        sql = f"""INSERT INTO video_likes (video_idx, likes, check_time, dislikes) 
-                  VALUES ('{video_idx}', '{row["likes"]}', to_timestamp({row["check_time"]}) + interval '9 hour', {row["dislikes"]});
-                  INSERT INTO video_views (video_idx, views, check_time) 
-                  VALUES ('{video_idx}', '{views}', to_timestamp({row["check_time"]}) + interval '9 hour');"""
-        cur.execute(sql)
+    try:
+        # 댓글 정보 저장
+        for index, row in comment_savedata.iterrows():
+            write_time = row["write_time"]
 
-    # 댓글 정보 저장
-    for index, row in comment_savedata.iterrows():
-        write_time = row["write_time"]
+            interval_time = write_time[:write_time.find(' ago')]
 
-        interval_time = write_time[:write_time.find(' ago')]
+            sql = f"""SELECT idx FROM video WHERE video_url='{row["video_url"]}'"""
+            cur.execute(sql)
+            video_idx = cur.fetchall()[0][0]
 
-        sql = f"""SELECT idx FROM video WHERE video_url='{row["video_url"]}'"""
-        cur.execute(sql)
-        video_idx = cur.fetchall()[0][0]
+            sql = f"""INSERT INTO comment (video_idx, comment_content, write_time) 
+                      VALUES ('{video_idx}', '{pre_process(row["comment_content"])}', to_timestamp({row["check_time"]}) + interval '9 hour' - interval '{interval_time}')
+                      RETURNING idx;"""
+            cur.execute(sql)
+            comment_idx = cur.fetchall()[0][0]
 
-        sql = f"""INSERT INTO comment (video_idx, comment_content, write_time) 
-                  VALUES ('{video_idx}', '{pre_process(row["comment_content"])}', to_timestamp({row["check_time"]}) + interval '9 hour' - interval '{interval_time}')
-                  RETURNING idx;"""
-        cur.execute(sql)
-        comment_idx = cur.fetchall()[0][0]
-
-        sql = f"""INSERT INTO comment_likes (comment_idx, likes, check_time) 
-                  VALUES ('{comment_idx}', '{row["likes"]}', to_timestamp({row["check_time"]}) + interval '9 hour');"""
-        cur.execute(sql)
+            sql = f"""INSERT INTO comment_likes (comment_idx, likes, check_time) 
+                      VALUES ('{comment_idx}', '{row["likes"]}', to_timestamp({row["check_time"]}) + interval '9 hour');"""
+            cur.execute(sql)
+    except Exception as e:
+        log(e)
+        comment_savedata.to_csv(f'./logs/{link[link.rfind("/") + 1:]}_comment_savedata.csv')
+        raise Exception('comment sql error')
 
     conn.commit()
 
 
 def main(LINK):
+    global driver, logf, link
+    driver = None
+    logf = None
+    link = None
     try:
-        global link
         link = LINK
         getDriver()
         openWindow(link)
@@ -363,14 +385,17 @@ def main(LINK):
         scrollDownVideo()
         links = getVideoLinks()
         startCrawling(links)
-        driver.quit()
+        print("ABC")
         toSql()
+        driver.quit()
         return True
     except Exception as e:
         log(f'Crawler Error on {LINK}')
         log(e)
+        logf.close()
+        driver.quit()
         return False
 
 
 if __name__ == '__main__':
-    main('https://www.youtube.com/channel/UCvS-d8Ntsny2H8UeINNsQhw')
+    main('https://www.youtube.com/channel/UCzPpEeJW6pCVxQiV_CPcAVA')
