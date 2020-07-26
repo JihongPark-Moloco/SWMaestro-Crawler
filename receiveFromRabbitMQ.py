@@ -4,8 +4,11 @@ import pika
 import YouTube_Crawler
 
 credentials = pika.PlainCredentials('muna', 'muna112358!')
-connection = pika.BlockingConnection(pika.ConnectionParameters('13.124.107.195', 5672, '/', credentials))
+connection = pika.BlockingConnection(pika.ConnectionParameters('13.124.107.195', 5672, '/',
+                                                               credentials, heartbeat=0,
+                                                               blocked_connection_timeout=None))
 channel = connection.channel()
+channel.basic_qos(prefetch_count=1)
 
 
 def callback(ch, method, properties, body):
@@ -17,6 +20,10 @@ def callback(ch, method, properties, body):
         # 크롤러가 에러를 띄우면 negative ack를 보냅니다.
         # URL 큐는 큐의 x-dead-letter 설정에 따라 해당 메세지를 URL_dead 큐로 보냅니다.
         ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
+    # if YouTube_Crawler.main(body.decode()):
+    #     return
+    # else:
+    #     channel.basic_publish(exchange ='', routing_key = 'URL_dead', body=body.decode())
 
 
 # auto_ack를 False로 수정했습니다.
