@@ -406,11 +406,11 @@ def toSql():
 
             if 'ago' in row["upload_time"]:
                 sql = f"""INSERT INTO video (video_name, video_description, video_url, upload_time, channel_idx)
-                          VALUES ('{pre_process(row["video_name"])}', '{pre_process(row["video_description"])}', '{row["video_url"]}', to_timestamp('{row["upload_time"]}', 'Mon DD, YYYY'), '{channel_idx}')
+                          VALUES ('{pre_process(row["video_name"])}', '{pre_process(row["video_description"])}', '{row["video_url"]}', to_timestamp({time.time()}) + interval '9 hour' - interval '{row["upload_time"][:-4]}', '{channel_idx}')
                           RETURNING idx"""
             else:
                 sql = f"""INSERT INTO video (video_name, video_description, video_url, upload_time, channel_idx)
-                          VALUES ('{pre_process(row["video_name"])}', '{pre_process(row["video_description"])}', '{row["video_url"]}', to_timestamp({time.time()}) + interval '9 hour' - interval '{row["upload_time"][:-4]}', '{channel_idx}')
+                          VALUES ('{pre_process(row["video_name"])}', '{pre_process(row["video_description"])}', '{row["video_url"]}', to_timestamp('{row["upload_time"]}', 'Mon DD, YYYY'), '{channel_idx}')
                           RETURNING idx"""
             cur.execute(sql)
             video_idx = cur.fetchall()[0][0]
