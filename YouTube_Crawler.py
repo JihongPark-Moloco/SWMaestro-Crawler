@@ -35,6 +35,7 @@ comment_savedata = pd.DataFrame(columns=['video_url',
 driver = None
 logf = None
 link = None
+too_old_switch = False
 
 
 def log(text):
@@ -54,7 +55,8 @@ def getDriver():
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     # options.add_argument("disable-gpu")
-    driver = Chrome(executable_path="/home/ubuntu/Crawler/chromedriver", options=options)  # ,chrome_options=options
+    driver = Chrome(executable_path=r"/home/ubuntu/Crawler/chromedriver",
+                    options=options)  # ,chrome_options=options
     driver.set_window_size(1920, 1080)
 
 
@@ -69,6 +71,8 @@ def openWindow(link):
                        'name': 'PREF',
                        'value': 'gl=US&hl=en',
                        'path': '/'})
+    driver.get(link)
+    driver.implicitly_wait(5)
 
 
 def getChannelInfo(link):
@@ -106,32 +110,59 @@ def getChannelInfo(link):
                                                                    'subscriber_num': channel_subscriber_count,
                                                                    'check_time': time.time()}])],
                                  ignore_index=True)
-    print(channel_savedata)
+    # print(channel_savedata)
 
 
 def scrollDownVideo():
-    global driver
+    global driver, too_old_switch
     driver.find_elements_by_xpath('//*[@id="tabsContent"]/paper-tab[2]')[0].click()
     body = driver.find_element_by_tag_name('body')
     WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath('// *[ @ id = "dismissable"]'))
 
-    # 동영상 모두 스크롤 다운
-    def check_scrolled(driver):
-        nonlocal current_height
-        return driver.execute_script(
-            'return document.querySelector("#page-manager > ytd-browse:nth-child(1)").scrollHeight;') != current_height
+    lists = driver.find_elements_by_xpath(
+        '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager']/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']/ytd-grid-renderer[@class='style-scope ytd-item-section-renderer']/div[@id='items']/ytd-grid-video-renderer[@class='style-scope ytd-grid-renderer']''')
 
-    end_time = time.time() + 3
+    for ll in lists[0].text.split('\n'):
+        if 'ago' in ll:
+            first_video_upload_date = ll
 
-    while time.time() < end_time:
-        end_time = time.time() + 3
-        current_height = driver.execute_script(
-            'return document.querySelector("#page-manager > ytd-browse:nth-child(1)").scrollHeight;')
+    if 'year' in first_video_upload_date or (
+            'month' in first_video_upload_date and int(first_video_upload_date.split(' ')[0]) > 4):
+        too_old_switch = True
+        log('latest video uploaded a month ago')
+        return
+
+    def check_last_video_upload_date(driver):
+        lists = driver.find_elements_by_xpath(
+            '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager']/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']/ytd-grid-renderer[@class='style-scope ytd-item-section-renderer']/div[@id='items']/ytd-grid-video-renderer[@class='style-scope ytd-grid-renderer']''')
+
+        for ll in lists[-1].text.split('\n'):
+            if 'ago' in ll:
+                last_video_upload_date = ll
+
+        if 'year' in last_video_upload_date or (
+                'month' in last_video_upload_date and int(last_video_upload_date.split(' ')[0]) > 4):
+            return True
+        else:
+            return False
+
+    while True:
+        if check_last_video_upload_date(driver):
+            break
         body.send_keys(Keys.END)
-        try:
-            WebDriverWait(driver, 4).until(check_scrolled)
-        except:
-            pass
+        time.sleep(1)
+
+    # end_time = time.time() + 3
+    #
+    # while time.time() < end_time:
+    #     end_time = time.time() + 3
+    #     current_height = driver.execute_script(
+    #         'return document.querySelector("#page-manager > ytd-browse:nth-child(1)").scrollHeight;')
+    #     body.send_keys(Keys.END)
+    #     try:
+    #         WebDriverWait(driver, 4).until(check_scrolled)
+    #     except:
+    #         pass
 
 
 def scrollDownComment(start_url):
@@ -148,21 +179,38 @@ def scrollDownComment(start_url):
     except:
         log('no comment')
         log({start_url})
+        return
 
-    def check_scrolled(driver):
-        nonlocal current_height
-        return driver.execute_script("return document.querySelector('#primary').scrollHeight;") != current_height
+    def check_comment_number(driver):
+        lists = driver.find_elements_by_xpath(
+            '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-watch-flexy[@class='style-scope ytd-page-manager hide-skeleton']/div[@id='columns']/div[@id='primary']/div[@id='primary-inner']/ytd-comments[@id='comments']/ytd-item-section-renderer[@id='sections']/div[@id='contents']/ytd-comment-thread-renderer[@class='style-scope ytd-item-section-renderer']''')
+        return len(lists)
 
-    end_time = time.time() + 3
+    number = 0
+    while number < 100:
+        before_number = number
+        number = check_comment_number(driver)
 
-    while time.time() < end_time:
-        end_time = time.time() + 3
-        current_height = driver.execute_script("return document.querySelector('#primary').scrollHeight;")
+        if before_number == number:
+            break
+
         body.send_keys(Keys.END)
-        try:
-            WebDriverWait(driver, 4).until(check_scrolled)
-        except:
-            pass
+        time.sleep(1)
+
+    # def check_scrolled(driver):
+    #     nonlocal current_height
+    #     return driver.execute_script("return document.querySelector('#primary').scrollHeight;") != current_height
+    #
+    # end_time = time.time() + 3
+    #
+    # while time.time() < end_time:
+    #     end_time = time.time() + 3
+    #     current_height = driver.execute_script("return document.querySelector('#primary').scrollHeight;")
+    #     body.send_keys(Keys.END)
+    #     try:
+    #         WebDriverWait(driver, 4).until(check_scrolled)
+    #     except:
+    #         pass
 
 
 def showReply():
@@ -200,8 +248,65 @@ def saveData(start_url):
     global comment_savedata
     global video_savedata
     global returnData
+
     html_s0 = driver.page_source
     html_s = BeautifulSoup(html_s0, 'html.parser')
+
+    name = driver.find_elements_by_xpath('//*[@id="container"]/h1/yt-formatted-string')[0].text
+    start_date = driver.find_elements_by_xpath('//*[@id="date"]/yt-formatted-string')[0].text
+
+    if 'Streamed live' in start_date:
+        if 'ago' in start_date:
+            start_date = start_date[start_date.find('live ') + 5:]
+        else:
+            start_date = start_date[start_date.find('on ') + 3:]
+
+    if 'Premiered' in start_date:
+        start_date = start_date[start_date.find('Premiered ') + 10:]
+
+    if 'Premieres' in start_date:
+        start_date = start_date[start_date.find('Premieres ') + 10:]
+
+    views = html_s.find('span', {'class': 'view-count'}).getText()
+    likes = html_s.find_all('yt-formatted-string',
+                            {'id': 'text', 'class': 'style-scope ytd-toggle-button-renderer style-text'})[
+        0].getText()
+    dislikes = html_s.find_all('yt-formatted-string',
+                               {'id': 'text', 'class': 'style-scope ytd-toggle-button-renderer style-text'})[
+        1].getText()
+
+    if "ike" in likes:
+        likes = -1
+    if "ike" in dislikes:
+        dislikes = -1
+
+    try:
+        driver.find_element_by_tag_name('body').send_keys(Keys.HOME)
+        time.sleep(1.0)
+        driver.find_element_by_tag_name('body').send_keys(Keys.PAGE_DOWN)
+        time.sleep(0.5)
+        driver.find_element_by_xpath('//*[@id="more"]/yt-formatted-string').click()
+    except:
+        log("do not find a show button")
+        log(start_url)
+        # print(html_s0)
+
+    try:
+        description = driver.find_element_by_xpath('//*[@id="description"]/yt-formatted-string').text
+        description = re.sub('\n', ' ', description)
+    except Exception as e:
+        log(f'video({start_url}) makes no description exception')
+        log(e)
+        description = "null"
+
+    video_savedata = pd.concat([video_savedata, pd.DataFrame([{'video_name': name,
+                                                               'video_description': description,
+                                                               'video_url': start_url,
+                                                               'upload_time': start_date,
+                                                               'likes': likes,
+                                                               'dislikes': dislikes,
+                                                               'check_time': time.time(),
+                                                               'views': views}])], ignore_index=True)
 
     # 모든 댓글 수집하기
     comment0 = html_s.find_all('div', {'id': "body", 'class': 'style-scope ytd-comment-renderer'})
@@ -236,45 +341,6 @@ def saveData(start_url):
                                                                        'check_time': time.time(),
                                                                        'write_time': write_date}])], ignore_index=True)
 
-    name = driver.find_elements_by_xpath('//*[@id="container"]/h1/yt-formatted-string')[0].text
-    start_date = driver.find_elements_by_xpath('//*[@id="date"]/yt-formatted-string')[0].text
-
-    views = html_s.find('span', {'class': 'view-count'}).getText()
-    likes = html_s.find_all('yt-formatted-string',
-                            {'id': 'text', 'class': 'style-scope ytd-toggle-button-renderer style-text'})[
-        0].getText()
-    dislikes = html_s.find_all('yt-formatted-string',
-                               {'id': 'text', 'class': 'style-scope ytd-toggle-button-renderer style-text'})[
-        1].getText()
-
-    try:
-        driver.find_element_by_tag_name('body').send_keys(Keys.HOME)
-        time.sleep(1.0)
-        driver.find_element_by_tag_name('body').send_keys(Keys.PAGE_DOWN)
-        time.sleep(0.5)
-        driver.find_element_by_xpath('//*[@id="more"]/yt-formatted-string').click()
-    except:
-        print("do not find a show button")
-        print(start_url)
-        # print(html_s0)
-
-    try:
-        description = driver.find_element_by_xpath('//*[@id="description"]/yt-formatted-string').text
-        description = re.sub('\n', ' ', description)
-    except Exception as e:
-        log(f'video({start_url}) makes no description exception')
-        log(e)
-        description = "null"
-
-    video_savedata = pd.concat([video_savedata, pd.DataFrame([{'video_name': name,
-                                                               'video_description': description,
-                                                               'video_url': start_url,
-                                                               'upload_time': start_date,
-                                                               'likes': likes,
-                                                               'dislikes': dislikes,
-                                                               'check_time': time.time(),
-                                                               'views': views}])], ignore_index=True)
-
 
 def startCrawling(links):
     global comment_savedata
@@ -283,13 +349,20 @@ def startCrawling(links):
     for number_of_url in range(len(links)):  # 리스트로 만들어져 있는 url중 한개의 url을 이용 range(len(links))
         start_url = links[number_of_url]
         driver.get(start_url)
+        driver.implicitly_wait(5)
+        if 'streaming' in driver.find_elements_by_xpath('//*[@id="date"]/yt-formatted-string')[0].text:
+            continue
+
         scrollDownComment(start_url)
         # showReply()
         saveData(start_url)
 
 
 def pre_process(text):
-    return re.sub("'", "''", text)
+    temp = bytearray(text.encode('UTF-8'))
+    temp.replace(b'\x00', b'')
+    temp = temp.decode('utf-8', 'ignore')
+    return re.sub("'", "''", temp)
 
 
 def toSql():
@@ -314,7 +387,7 @@ def toSql():
                         channel_description = '{pre_process(row["channel_description"])}',
                         channel_start_date  = to_date('{row["channel_start_date"]}', 'Mon DD, YYYY')
                     WHERE idx = {channel_idx};
-    
+
                     INSERT INTO channel_subscriber (channel_idx, subscriber_num, check_time)
                     VALUES ({channel_idx}, '{row["subscriber_num"]}', to_timestamp({row["check_time"]}) + interval '9 hour');"""
             cur.execute(sql)
@@ -328,14 +401,22 @@ def toSql():
         for index, row in video_savedata.iterrows():
             views = re.sub(",", "", (row['views'])[:-5])
 
-            sql = f"""INSERT INTO video (video_name, video_description, video_url, upload_time, channel_idx)
-                      VALUES ('{pre_process(row["video_name"])}', '{pre_process(row["video_description"])}', '{row["video_url"]}', to_timestamp('{row["upload_time"]}', 'Mon DD, YYYY'), '{channel_idx}')
-                      RETURNING idx"""
+            if 'No' in views:
+                views = 0
+
+            if 'ago' in row["upload_time"]:
+                sql = f"""INSERT INTO video (video_name, video_description, video_url, upload_time, channel_idx)
+                          VALUES ('{pre_process(row["video_name"])}', '{pre_process(row["video_description"])}', '{row["video_url"]}', to_timestamp({time.time()}) + interval '9 hour' - interval '{row["upload_time"][:-4]}', '{channel_idx}')
+                          RETURNING idx"""
+            else:
+                sql = f"""INSERT INTO video (video_name, video_description, video_url, upload_time, channel_idx)
+                          VALUES ('{pre_process(row["video_name"])}', '{pre_process(row["video_description"])}', '{row["video_url"]}', to_timestamp('{row["upload_time"]}', 'Mon DD, YYYY'), '{channel_idx}')
+                          RETURNING idx"""
             cur.execute(sql)
             video_idx = cur.fetchall()[0][0]
 
             sql = f"""INSERT INTO video_likes (video_idx, likes, check_time, dislikes) 
-                      VALUES ('{video_idx}', '{row["likes"]}', to_timestamp({row["check_time"]}) + interval '9 hour', {row["dislikes"]});
+                      VALUES ('{video_idx}', '{row["likes"]}', to_timestamp({row["check_time"]}) + interval '9 hour', '{row["dislikes"]}');
                       INSERT INTO video_views (video_idx, views, check_time) 
                       VALUES ('{video_idx}', '{views}', to_timestamp({row["check_time"]}) + interval '9 hour');"""
             cur.execute(sql)
@@ -373,19 +454,27 @@ def toSql():
 
 
 def main(LINK):
-    global driver, logf, link
+    global driver, logf, link, channel_savedata, video_savedata, comment_savedata, too_old_switch
+
+    channel_savedata.drop(channel_savedata.index, inplace=True)
+    video_savedata.drop(video_savedata.index, inplace=True)
+    comment_savedata.drop(comment_savedata.index, inplace=True)
+
     driver = None
     logf = None
     link = None
+    too_old_switch = False
+
     try:
         link = LINK
         getDriver()
         openWindow(link)
         getChannelInfo(link)
         scrollDownVideo()
-        links = getVideoLinks()
-        startCrawling(links)
-        print("ABC")
+        if not too_old_switch:
+            links = getVideoLinks()
+            startCrawling(links)
+            print("ABC")
         toSql()
         driver.quit()
         return True
@@ -398,4 +487,4 @@ def main(LINK):
 
 
 if __name__ == '__main__':
-    main('https://www.youtube.com/channel/UCzPpEeJW6pCVxQiV_CPcAVA')
+    main('https://www.youtube.com/channel/UCXONpVqmjAe9ua7bp9R2VqA')
