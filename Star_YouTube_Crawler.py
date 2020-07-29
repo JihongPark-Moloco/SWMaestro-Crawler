@@ -51,12 +51,11 @@ def log(text):
 def getDriver():
     global driver
     options = ChromeOptions()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
+    # options.add_argument('--headless')
+    # options.add_argument('--no-sandbox')
+    # options.add_argument('--disable-dev-shm-usage')
     # options.add_argument("disable-gpu")
-    driver = Chrome(executable_path=r"/home/ubuntu/Crawler/chromedriver",
-                    options=options)  # ,chrome_options=options
+    driver = Chrome(executable_path="chromedriver",chrome_options=options)  # ,chrome_options=options
     driver.set_window_size(1920, 1080)
 
 
@@ -124,58 +123,68 @@ def scrollDownVideo():
     global driver, too_old_switch
     driver.find_elements_by_xpath('//*[@id="tabsContent"]/paper-tab[2]')[0].click()
     body = driver.find_element_by_tag_name('body')
-    WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath('''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager'][1]/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']'''))
+    WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath(
+        '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager'][1]/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']'''))
 
     try:
-        driver.find_elements_by_xpath('''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager']/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer'][3]/div[@id='contents']/ytd-shelf-renderer[@class='style-scope ytd-item-section-renderer']/div[@id='dismissable']/div[@id='contents']/ytd-grid-renderer[@class='style-scope ytd-shelf-renderer']/yt-formatted-string[@id='view-all']/a[@class='yt-simple-endpoint style-scope yt-formatted-string']''')[0].click()
-        WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath('''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager'][1]/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']'''))
+        driver.find_elements_by_xpath(
+            '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager']/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer'][3]/div[@id='contents']/ytd-shelf-renderer[@class='style-scope ytd-item-section-renderer']/div[@id='dismissable']/div[@id='contents']/ytd-grid-renderer[@class='style-scope ytd-shelf-renderer']/yt-formatted-string[@id='view-all']/a[@class='yt-simple-endpoint style-scope yt-formatted-string']''')[
+            0].click()
+        WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath(
+            '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager'][1]/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']'''))
     except:
         pass
 
-    lists = driver.find_elements_by_xpath(
-        '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager']/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']/ytd-grid-renderer[@class='style-scope ytd-item-section-renderer']/div[@id='items']/ytd-grid-video-renderer[@class='style-scope ytd-grid-renderer']''')
-
-    for ll in lists[0].text.split('\n'):
-        if 'ago' in ll:
-            first_video_upload_date = ll
-
-    if 'year' in first_video_upload_date or (
-            'month' in first_video_upload_date and int(first_video_upload_date.split(' ')[0]) > 4):
-        too_old_switch = True
-        log('latest video uploaded a month ago')
-        return
-
-    def check_last_video_upload_date(driver):
-        lists = driver.find_elements_by_xpath(
-            '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager']/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']/ytd-grid-renderer[@class='style-scope ytd-item-section-renderer']/div[@id='items']/ytd-grid-video-renderer[@class='style-scope ytd-grid-renderer']''')
-
-        for ll in lists[-1].text.split('\n'):
-            if 'ago' in ll:
-                last_video_upload_date = ll
-
-        if 'year' in last_video_upload_date or (
-                'month' in last_video_upload_date and int(last_video_upload_date.split(' ')[0]) > 4):
-            return True
-        else:
-            return False
-
-    while True:
-        if check_last_video_upload_date(driver):
-            break
-        body.send_keys(Keys.END)
-        time.sleep(1)
-
-    # end_time = time.time() + 3
     #
-    # while time.time() < end_time:
-    #     end_time = time.time() + 3
-    #     current_height = driver.execute_script(
-    #         'return document.querySelector("#page-manager > ytd-browse:nth-child(1)").scrollHeight;')
+    # lists = driver.find_elements_by_xpath(
+    #     '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager']/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']/ytd-grid-renderer[@class='style-scope ytd-item-section-renderer']/div[@id='items']/ytd-grid-video-renderer[@class='style-scope ytd-grid-renderer']''')
+    #
+    # for ll in lists[0].text.split('\n'):
+    #     if 'ago' in ll:
+    #         first_video_upload_date = ll
+    #
+    # if 'year' in first_video_upload_date or (
+    #         'month' in first_video_upload_date and int(first_video_upload_date.split(' ')[0]) > 4):
+    #     too_old_switch = True
+    #     log('latest video uploaded a month ago')
+    #     return
+    #
+    # def check_last_video_upload_date(driver):
+    #     lists = driver.find_elements_by_xpath(
+    #         '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager']/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']/ytd-grid-renderer[@class='style-scope ytd-item-section-renderer']/div[@id='items']/ytd-grid-video-renderer[@class='style-scope ytd-grid-renderer']''')
+    #
+    #     for ll in lists[-1].text.split('\n'):
+    #         if 'ago' in ll:
+    #             last_video_upload_date = ll
+    #
+    #     if 'year' in last_video_upload_date or (
+    #             'month' in last_video_upload_date and int(last_video_upload_date.split(' ')[0]) > 4):
+    #         return True
+    #     else:
+    #         return False
+    #
+    # while True:
+    #     if check_last_video_upload_date(driver):
+    #         break
     #     body.send_keys(Keys.END)
-    #     try:
-    #         WebDriverWait(driver, 4).until(check_scrolled)
-    #     except:
-    #         pass
+    #     time.sleep(1)
+
+    def check_scrolled(driver):
+        nonlocal current_height
+        return driver.execute_script(
+            'return document.querySelector("#page-manager > ytd-browse:nth-child(1)").scrollHeight;') != current_height
+
+    end_time = time.time() + 3
+
+    while time.time() < end_time:
+        end_time = time.time() + 3
+        current_height = driver.execute_script(
+            'return document.querySelector("#page-manager > ytd-browse:nth-child(1)").scrollHeight;')
+        body.send_keys(Keys.END)
+        try:
+            WebDriverWait(driver, 4).until(check_scrolled)
+        except:
+            pass
 
 
 def scrollDownComment(start_url):
@@ -380,10 +389,6 @@ def pre_process(text):
 
 def toSql():
     global channel_savedata, video_savedata, comment_savedata, link
-
-    # channel_savedata.to_csv('channel_savedata.csv')
-    # video_savedata.to_csv('video_savedata')
-    # comment_savedata.to_csv('comment_savedata.csv')
 
     conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="13.124.107.195", port="5432")
     conn.autocommit = False
