@@ -62,7 +62,7 @@ while True:
                                                                            blocked_connection_timeout=None))
             channel = connection.channel()
 
-            channel.basic_ack(delivery_tag=method.delivery_tag)
+            channel.basic_ack(delivery_tag=method.delivery_tag,multiple=False,requeue=False)
 
             connection.close(reply_code=200, reply_text='Normal shutdown')
             print('success')
