@@ -139,6 +139,11 @@ def scrollDownVideo():
         if 'ago' in ll:
             first_video_upload_date = ll
 
+    if 'first_video_upload_date' not in locals():
+        for ll in lists[1].text.split('\n'):
+            if 'ago' in ll:
+                first_video_upload_date = ll
+
     if 'year' in first_video_upload_date or (
             'month' in first_video_upload_date and int(first_video_upload_date.split(' ')[0]) > 4):
         too_old_switch = True
