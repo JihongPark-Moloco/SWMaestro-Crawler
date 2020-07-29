@@ -55,7 +55,7 @@ def getDriver():
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     # options.add_argument("disable-gpu")
-    driver = Chrome(executable_path=r"chromedriver",
+    driver = Chrome(executable_path=r"/home/ubuntu/Crawler/chromedriver",
                     options=options)  # ,chrome_options=options
     driver.set_window_size(1920, 1080)
 
