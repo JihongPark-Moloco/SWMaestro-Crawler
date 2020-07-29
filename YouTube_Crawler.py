@@ -469,6 +469,7 @@ def toSql():
         raise Exception('comment sql error')
 
     conn.commit()
+    conn.close()
 
 
 def main(LINK):
