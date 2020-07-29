@@ -78,12 +78,14 @@ def getChannelInfo(link):
     print(link)
     global channel_savedata
     global driver
-    
+
     try:
-        driver.find_elements_by_xpath('/html/body/ytd-app/ytd-popup-container/iron-dropdown/div/yt-bubble-hint-renderer/div[2]/div[2]/yt-button-renderer/a/paper-button/yt-formatted-string')[0].click()
+        driver.find_elements_by_xpath(
+            '/html/body/ytd-app/ytd-popup-container/iron-dropdown/div/yt-bubble-hint-renderer/div[2]/div[2]/yt-button-renderer/a/paper-button/yt-formatted-string')[
+            0].click()
     except:
         pass
-    
+
     driver.find_elements_by_xpath('//*[@id="tabsContent"]//*[contains(., "About")]')[0].click()
     WebDriverWait(driver, 3).until(lambda x: x.find_element_by_id("description-container"))
     html = BeautifulSoup(driver.page_source, 'html.parser')
@@ -121,7 +123,7 @@ def scrollDownVideo():
     global driver, too_old_switch
     driver.find_elements_by_xpath('//*[@id="tabsContent"]/paper-tab[2]')[0].click()
     body = driver.find_element_by_tag_name('body')
-    WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath('// *[ @ id = "dismissable"]'))
+    WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath('''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager'][1]/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']/ytd-grid-renderer[@class='style-scope ytd-item-section-renderer']/div[@id='items']'''))
 
     lists = driver.find_elements_by_xpath(
         '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager']/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']/ytd-grid-renderer[@class='style-scope ytd-item-section-renderer']/div[@id='items']/ytd-grid-video-renderer[@class='style-scope ytd-grid-renderer']''')
@@ -491,4 +493,4 @@ def main(LINK):
 
 
 if __name__ == '__main__':
-    main('https://www.youtube.com/channel/UCXONpVqmjAe9ua7bp9R2VqA')
+    main('https://www.youtube.com/c/BJ%EC%8C%88%EC%9A%A9')
