@@ -51,11 +51,11 @@ def log(text):
 def getDriver():
     global driver
     options = ChromeOptions()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument("disable-gpu")
-    driver = Chrome(executable_path="/Users/jun/juny/swm/crawler/muna-3/chromedriverjun",chrome_options=options)  # ,chrome_options=options
+    # options.add_argument('--headless')
+    # options.add_argument('--no-sandbox')
+    # options.add_argument('--disable-dev-shm-usage')
+    # options.add_argument("disable-gpu")
+    driver = Chrome(executable_path="chromedriver",chrome_options=options)  # ,chrome_options=options
     driver.set_window_size(1920, 1080)
 
 
