@@ -30,7 +30,7 @@ def callback(ch, method, properties, body):
 channel.basic_consume(queue='URL', on_message_callback=callback, auto_ack=False)
 
 print(' [*] Waiting for messages. To exit press CTRL+C')
-channel.start_consuming(
+channel.start_consuming()
 
 
 # while True:
