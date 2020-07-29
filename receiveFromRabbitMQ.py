@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import pika
 import YouTube_Crawler
@@ -46,7 +46,7 @@ while True:
         channel = connection.channel()
         channel.basic_qos(prefetch_count=1)
 
-        method_frame, header_frame, body = channel.basic_get(queue='URL', auto_ack=True)
+        mh, header_frame, body = channel.basic_get(queue='URL', auto_ack=False)
 
         connection.close(reply_code=200, reply_text='Normal shutdown')
     except Exception as e:
@@ -56,7 +56,20 @@ while True:
     print(" [x] Received %r" % body.decode())
 
     if YouTube_Crawler.main(body.decode()):
-        print('success')
+        try:
+            connection = pika.BlockingConnection(pika.ConnectionParameters('13.124.107.195', 5672, '/',
+                                                                           credentials, heartbeat=0,
+                                                                           blocked_connection_timeout=None))
+            channel = connection.channel()
+
+            channel.basic_ack(delivery_tag=method.delivery_tag,multiple=False,requeue=False)
+
+            connection.close(reply_code=200, reply_text='Normal shutdown')
+            print('success')
+
+        except Exception as e:
+            print("connection Error:", e)
+
     else:
         try:
             connection = pika.BlockingConnection(pika.ConnectionParameters('13.124.107.195', 5672, '/',
@@ -64,10 +77,7 @@ while True:
                                                                            blocked_connection_timeout=None))
             channel = connection.channel()
             channel.basic_qos(prefetch_count=1)
-
-            channel.basic_publish(exchange='URL_exchange',
-                                  routing_key='URL_dead',
-                                  body=body.decode())
+            channel.basic_nack(delivery_tag=method.delivery_tag,multiple=False,requeue=False)
 
             connection.close(reply_code=200, reply_text='Normal shutdown')
         except Exception as e:
