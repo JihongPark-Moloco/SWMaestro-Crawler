@@ -79,7 +79,12 @@ def getChannelInfo(link):
     print(link)
     global channel_savedata
     global driver
-
+    
+    try:
+        driver.find_elements_by_xpath('/html/body/ytd-app/ytd-popup-container/iron-dropdown/div/yt-bubble-hint-renderer/div[2]/div[2]/yt-button-renderer/a/paper-button/yt-formatted-string')[0].click()
+    except:
+        pass
+    
     driver.find_elements_by_xpath('//*[@id="tabsContent"]//*[contains(., "About")]')[0].click()
     WebDriverWait(driver, 3).until(lambda x: x.find_element_by_id("description-container"))
     html = BeautifulSoup(driver.page_source, 'html.parser')

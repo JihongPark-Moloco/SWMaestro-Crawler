@@ -8,7 +8,7 @@ def loadUrls():
         conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="13.124.107.195",
                            port="5432")
         cur = conn.cursor()
-        cur.execute("SELECT channel_url from channel where need_process = True and channel_name is null")
+        cur.execute("SELECT channel_url from channel where need_process = True")
         rows = cur.fetchall()
         newrows = [row[0] for row in rows]
         [print(row) for row in newrows]
