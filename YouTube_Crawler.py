@@ -9,6 +9,7 @@ import pandas as pd
 from selenium.webdriver.support.ui import WebDriverWait
 import psycopg2 as pg2
 import re
+import traceback
 
 channel_savedata = pd.DataFrame(columns=['channel_name',
                                          'channel_description',
@@ -335,6 +336,10 @@ def saveData(start_url):
                                                {'id': 'content-text',
                                                 'class': 'style-scope ytd-comment-renderer'}).text
             comment_content = re.sub('\n', ' ', comment_content)
+
+            if len(comment_content) >= 7900:
+                comment_content = comment_content[:7900] + "..."
+
         except Exception as e:
             log(f'video({start_url}) comment#{i} raise comment_content except')
             log(e)
@@ -368,8 +373,11 @@ def startCrawling(links):
         start_url = links[number_of_url]
         driver.get(start_url)
         driver.implicitly_wait(5)
-        if 'streaming' in driver.find_elements_by_xpath('//*[@id="date"]/yt-formatted-string')[0].text:
-            continue
+        try:
+            if 'streaming' in driver.find_elements_by_xpath('//*[@id="date"]/yt-formatted-string')[0].text:
+                continue
+        except:
+            pass
 
         scrollDownComment(start_url)
         # showReply()
@@ -390,7 +398,7 @@ def toSql():
     # video_savedata.to_csv('video_savedata')
     # comment_savedata.to_csv('comment_savedata.csv')
 
-    conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="13.124.107.195", port="5432")
+    conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="222.112.206.190", port="5432")
     conn.autocommit = False
     cur = conn.cursor()
 
@@ -469,6 +477,7 @@ def toSql():
         raise Exception('comment sql error')
 
     conn.commit()
+    conn.close()
 
 
 def main(LINK):
@@ -497,12 +506,14 @@ def main(LINK):
         driver.quit()
         return True
     except Exception as e:
+        error = traceback.format_exc()
         log(f'Crawler Error on {LINK}')
         log(e)
+        log(error)
         logf.close()
         driver.quit()
         return False
 
 
 if __name__ == '__main__':
-    main('https://www.youtube.com/c/BLACKPINKOFFICIAL')
+    main('https://www.youtube.com/c/%EB%AF%B8%EC%BD%A5%EC%9D%98%EB%8B%A4%EB%82%98%EC%99%80%EB%A6%AC%EB%B7%B0')
