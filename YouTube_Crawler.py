@@ -95,7 +95,7 @@ def getChannelInfo(link):
         pass
 
     driver.find_elements_by_xpath('//*[@id="tabsContent"]//*[contains(., "About")]')[0].click()
-    WebDriverWait(driver, 3).until(lambda x: x.find_element_by_id("description-container"))
+    WebDriverWait(driver, 7).until(lambda x: x.find_element_by_id("description-container"))
     html = BeautifulSoup(driver.page_source, 'html.parser')
     channel_title = html.find("yt-formatted-string", {"id": "text", "class": "ytd-channel-name"}).getText()
     print(channel_title)
@@ -103,18 +103,20 @@ def getChannelInfo(link):
         channel_description = html.find("yt-formatted-string", {"id": "description"}).getText()
         channel_description = re.sub('\n', ' ', channel_description)
     except:
-        log("channel description is empty")
+        #log("channel description is empty")
+        pass
     try:
         channel_start_date = re.search("[A-Z]{1}[a-z]{2} [0-9]{1,2}[,] [0-9]{4}",
                                        str(html.find("div", {"id": "right-column"}))).group(0)
     except:
-        log("channel description is empty")
+        #log("channel description is empty")
+        pass
     print(channel_start_date)
 
     try:
         channel_subscriber_count = html.find("yt-formatted-string", {"id": "subscriber-count"}).getText()
     except:
-        log("this channel has no subscriber")
+        #log("this channel has no subscriber")
         channel_subscriber_count = -1
 
     channel_savedata = pd.concat([channel_savedata, pd.DataFrame([{'channel_name': channel_title,
@@ -139,13 +141,14 @@ def scrollDownVideo():
         driver.find_elements_by_xpath(
             '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager']/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer'][3]/div[@id='contents']/ytd-shelf-renderer[@class='style-scope ytd-item-section-renderer']/div[@id='dismissable']/div[@id='contents']/ytd-grid-renderer[@class='style-scope ytd-shelf-renderer']/yt-formatted-string[@id='view-all']/a[@class='yt-simple-endpoint style-scope yt-formatted-string']''')[
             0].click()
-        WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath(
+        WebDriverWait(driver, 7).until(lambda x: x.find_element_by_xpath(
             '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager'][1]/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']'''))
     except:
         pass
 
     lists = driver.find_elements_by_xpath(
         '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager']/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']/ytd-grid-renderer[@class='style-scope ytd-item-section-renderer']/div[@id='items']/ytd-grid-video-renderer[@class='style-scope ytd-grid-renderer']''')
+
 
     for ll in lists[0].text.split('\n'):
         if 'ago' in ll:
@@ -159,7 +162,7 @@ def scrollDownVideo():
     if 'year' in first_video_upload_date or (
             'month' in first_video_upload_date and int(first_video_upload_date.split(' ')[0]) > 4):
         too_old_switch = True
-        log('latest video uploaded a month ago')
+        #log('latest video uploaded a month ago')
         return
 
     def check_last_video_upload_date(driver):
@@ -207,8 +210,8 @@ def scrollDownComment(start_url):
     try:
         WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath('//*[@id="content-text"]'))
     except:
-        log('no comment')
-        log({start_url})
+        # log('no comment')
+        # log({start_url})
         return
 
     def check_comment_number(driver):
@@ -285,6 +288,9 @@ def saveData(start_url):
     name = driver.find_elements_by_xpath('//*[@id="container"]/h1/yt-formatted-string')[0].text
     start_date = driver.find_elements_by_xpath('//*[@id="date"]/yt-formatted-string')[0].text
 
+    if 'watching' in start_date:
+        return
+
     if 'Streamed live' in start_date:
         if 'ago' in start_date:
             start_date = start_date[start_date.find('live ') + 5:]
@@ -317,16 +323,17 @@ def saveData(start_url):
         time.sleep(0.5)
         driver.find_element_by_xpath('//*[@id="more"]/yt-formatted-string').click()
     except:
-        log("do not find a show button")
-        log(start_url)
+        pass
+        # log("do not find a show button")
+        # log(start_url)
         # print(html_s0)
 
     try:
         description = driver.find_element_by_xpath('//*[@id="description"]/yt-formatted-string').text
         description = re.sub('\n', ' ', description)
     except Exception as e:
-        log(f'video({start_url}) makes no description exception')
-        log(e)
+        #log(f'video({start_url}) makes no description exception')
+        #log(e)
         description = "null"
 
     video_savedata = pd.concat([video_savedata, pd.DataFrame([{'video_name': name,
@@ -352,22 +359,22 @@ def saveData(start_url):
                 comment_content = comment_content[:7900] + "..."
 
         except Exception as e:
-            log(f'video({start_url}) comment#{i} raise comment_content except')
-            log(e)
+            #log(f'video({start_url}) comment#{i} raise comment_content except')
+            #log(e)
             continue
         try:
             write_date = comment0[i].find('a', {'class': 'yt-simple-endpoint style-scope yt-formatted-string'}).text
         except Exception as e:
-            log(f'video({start_url}) comment#{i} has no write date except')
-            log(e)
+            #log(f'video({start_url}) comment#{i} has no write date except')
+            #log(e)
             write_date = "null"
         try:
             likenum_text = comment0[i].find('span', {'id': 'vote-count-left'}).text
             goods = "".join(re.findall('[0-9]', likenum_text))
         except Exception as e:
             goods = 0
-            log(f'video({start_url}) comment#{i} likenum makes except')
-            log(e)
+            #log(f'video({start_url}) comment#{i} likenum makes except')
+            #log(e)
 
         comment_savedata = pd.concat([comment_savedata, pd.DataFrame([{'video_url': start_url,
                                                                        'comment_content': comment_content,
@@ -402,6 +409,7 @@ def pre_process(text):
     temp = bytearray(text.encode('UTF-8'))
     temp.replace(b'\x00', b'')
     temp = temp.decode('utf-8', 'ignore')
+    re.sub("\"", " ", temp)
     return re.sub("'", "''", temp)
 
 
@@ -412,7 +420,7 @@ def toSql():
     # video_savedata.to_csv('video_savedata')
     # comment_savedata.to_csv('comment_savedata.csv')
 
-    conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="222.112.206.190", port="5432")
+    conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="54.180.25.4", port="5432")
     conn.autocommit = False
     cur = conn.cursor()
 
@@ -524,6 +532,8 @@ def main(LINK):
         log(f'Crawler Error on {LINK}')
         log(e)
         log(error)
+        log(driver.current_url)
+        log(driver.page_source)
         logf.close()
         driver.quit()
         return False
