@@ -52,11 +52,17 @@ def log(text):
 def getDriver():
     global driver
     options = ChromeOptions()
-    options.add_argument('--headless')
+    # options.add_argument('--headless')
     options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--enable-automation')
+    options.headless = True
+    options.add_argument('--disable-gpu')
+    options.add_argument('--disable-features=VizDisplayCompositor')
+    # options.add_argument('--disable-dev-shm-usage')
     # options.add_argument("disable-gpu")
+
     driver = Chrome(executable_path=r"/home/ubuntu/Crawler/chromedriver",
+    # driver = Chrome(executable_path=r"chromedriver",
                     options=options)  # ,chrome_options=options
     driver.set_window_size(1920, 1080)
 
@@ -125,12 +131,16 @@ def scrollDownVideo():
     global driver, too_old_switch
     driver.find_elements_by_xpath('//*[@id="tabsContent"]/paper-tab[2]')[0].click()
 
-    WebDriverWait(driver, 7).until(lambda x: x.find_element_by_xpath('''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager'][1]/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']'''))
+    WebDriverWait(driver, 7).until(lambda x: x.find_element_by_xpath(
+        '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager'][1]/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']'''))
     body = driver.find_element_by_tag_name('body')
-    
+
     try:
-        driver.find_elements_by_xpath('''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager']/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer'][3]/div[@id='contents']/ytd-shelf-renderer[@class='style-scope ytd-item-section-renderer']/div[@id='dismissable']/div[@id='contents']/ytd-grid-renderer[@class='style-scope ytd-shelf-renderer']/yt-formatted-string[@id='view-all']/a[@class='yt-simple-endpoint style-scope yt-formatted-string']''')[0].click()
-        WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath('''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager'][1]/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']'''))
+        driver.find_elements_by_xpath(
+            '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager']/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer'][3]/div[@id='contents']/ytd-shelf-renderer[@class='style-scope ytd-item-section-renderer']/div[@id='dismissable']/div[@id='contents']/ytd-grid-renderer[@class='style-scope ytd-shelf-renderer']/yt-formatted-string[@id='view-all']/a[@class='yt-simple-endpoint style-scope yt-formatted-string']''')[
+            0].click()
+        WebDriverWait(driver, 3).until(lambda x: x.find_element_by_xpath(
+            '''/html/body/ytd-app/div[@id='content']/ytd-page-manager[@id='page-manager']/ytd-browse[@class='style-scope ytd-page-manager'][1]/ytd-two-column-browse-results-renderer[@class='style-scope ytd-browse grid grid-6-columns']/div[@id='primary']/ytd-section-list-renderer[@class='style-scope ytd-two-column-browse-results-renderer']/div[@id='contents']/ytd-item-section-renderer[@class='style-scope ytd-section-list-renderer']/div[@id='contents']'''))
     except:
         pass
 
@@ -373,7 +383,10 @@ def startCrawling(links):
     for number_of_url in range(len(links)):  # 리스트로 만들어져 있는 url중 한개의 url을 이용 range(len(links))
         start_url = links[number_of_url]
         driver.get(start_url)
-        driver.implicitly_wait(5)
+        try:
+            WebDriverWait(driver, 5).until(lambda x: x.find_elements_by_xpath('//*[@id="date"]/yt-formatted-string'))
+        except:
+            pass
         try:
             if 'streaming' in driver.find_elements_by_xpath('//*[@id="date"]/yt-formatted-string')[0].text:
                 continue
