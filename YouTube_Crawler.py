@@ -53,16 +53,16 @@ def getDriver():
     global driver
     options = ChromeOptions()
     # options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
+    # options.add_argument('--no-sandbox')
     options.add_argument('--enable-automation')
-    options.headless = True
+    # options.headless = True
     options.add_argument('--disable-gpu')
     options.add_argument('--disable-features=VizDisplayCompositor')
     # options.add_argument('--disable-dev-shm-usage')
     # options.add_argument("disable-gpu")
 
-    driver = Chrome(executable_path=r"/home/ubuntu/Crawler/chromedriver",
-    # driver = Chrome(executable_path=r"chromedriver",
+    # driver = Chrome(executable_path=r"/home/ubuntu/Crawler/chromedriver",
+    driver = Chrome(executable_path=r"chromedriver",
                     options=options)  # ,chrome_options=options
     driver.set_window_size(1920, 1080)
 
@@ -172,12 +172,14 @@ def scrollDownVideo():
         for ll in lists[-1].text.split('\n'):
             if 'ago' in ll:
                 last_video_upload_date = ll
-
-        if 'year' in last_video_upload_date or (
-                'month' in last_video_upload_date and int(last_video_upload_date.split(' ')[0]) > 4):
+        try:
+            if 'year' in last_video_upload_date or (
+                    'month' in last_video_upload_date and int(last_video_upload_date.split(' ')[0]) > 4):
+                return True
+            else:
+                return False
+        except:
             return True
-        else:
-            return False
 
     while True:
         if check_last_video_upload_date(driver):
