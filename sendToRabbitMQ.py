@@ -9,7 +9,9 @@ def loadUrls():
         conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="222.112.206.190",
                            port="5432")
         cur = conn.cursor()
-        cur.execute("SELECT channel_id from channel where channel_name is null;")
+        # cur.execute("SELECT upload_id from channel;")
+        cur.execute(
+            """SELECT video_id FROM video WHERE upload_time BETWEEN CURRENT_TIMESTAMP - interval '3 MONTH' AND now();""")
         rows = cur.fetchall()
         newrows = [row[0] for row in rows]
         [print(row) for row in newrows]
