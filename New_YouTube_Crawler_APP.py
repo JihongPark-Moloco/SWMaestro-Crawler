@@ -3,7 +3,7 @@ import psycopg2 as pg2
 import pika
 
 crawler = New_YouTube_Crawler.YouTube_Crawler()
-crawler.make_driver_ready()
+# crawler.make_driver_ready()
 
 credentials = pika.PlainCredentials('muna', 'muna112358!')
 connection = pika.BlockingConnection(pika.ConnectionParameters('13.124.107.195', 5672, '/',
