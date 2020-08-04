@@ -122,20 +122,34 @@ def download_comments_old_api(youtube_id, sleep=1):
     response = session.get(YOUTUBE_VIDEO_URL.format(youtube_id=youtube_id))
     html = response.text
     # print(html)
+    # raise Exception
     start = html.rfind('"viewCount"') + 13
     end = html.find('"', start)
-    # print(html[start:end])
+    # print(start, end, html[start:end])
     view_count = int(html[start:end])
 
     start = html.rfind('{"iconType":"LIKE"},"defaultText":{"accessibility":{"accessibilityData":{"label":"') + 82
     end = html.find(' ', start)
     likes = html[start:end]
-    likes = int(re.sub(',', '', likes))
+    if 'no' in likes:
+        likes = -1
+    else:
+        try:
+            likes = int(re.sub(',', '', likes))
+        except:
+            likes = -1
 
     start = html.rfind('{"iconType":"DISLIKE"},"defaultText":{"accessibility":{"accessibilityData":{"label":"') + 85
     end = html.find(' ', start)
     dislikes = html[start:end]
-    dislikes = int(re.sub(',', '', dislikes))
+
+    if 'no' in dislikes:
+        dislikes = -1
+    else:
+        try:
+            dislikes = int(re.sub(',', '', dislikes))
+        except:
+            dislikes = -1
 
     yield [view_count, likes, dislikes]
 
@@ -348,4 +362,4 @@ def main(video_id):
 
 
 if __name__ == "__main__":
-    main('FPCebOEe4oA')
+    main('d23MVB82PRU')
