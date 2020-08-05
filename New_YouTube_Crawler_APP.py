@@ -1,6 +1,10 @@
 import New_YouTube_Crawler
 import psycopg2 as pg2
 import pika
+import time
+import random
+
+time.sleep(random.random() * 18)
 
 crawler = New_YouTube_Crawler.YouTube_Crawler()
 # crawler.make_driver_ready()

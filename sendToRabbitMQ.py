@@ -12,7 +12,7 @@ def loadUrls():
         # cur.execute("SELECT upload_id from channel;")
         cur.execute(
             # """SELECT video_id FROM video WHERE upload_time BETWEEN CURRENT_TIMESTAMP - interval '3 MONTH' AND now();""")
-            """SELECT video_id FROM video;""")
+            """SELECT DISTINCT video_id from video A LEFT JOIN video_views B ON A.idx = B.video_idx WHERE B.video_idx is NULL AND A.forbidden = FALSE;""")
         rows = cur.fetchall()
         newrows = [row[0] for row in rows]
         [print(row) for row in newrows]

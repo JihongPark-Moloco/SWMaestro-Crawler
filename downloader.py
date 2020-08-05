@@ -11,12 +11,14 @@ from lxml.cssselect import CSSSelector
 import traceback
 import psycopg2 as pg2
 import re
+import random
+import json
 
 YOUTUBE_VIDEO_URL = 'https://www.youtube.com/watch?v={youtube_id}'
 YOUTUBE_COMMENTS_AJAX_URL_OLD = 'https://www.youtube.com/comment_ajax'
 YOUTUBE_COMMENTS_AJAX_URL_NEW = 'https://www.youtube.com/comment_service_ajax'
 
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36'
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36"
 cookies = requests.cookies.create_cookie(domain='.youtube.com', name='PREF', value='gl=US&hl=en')
 
 
@@ -43,59 +45,105 @@ def ajax_request(session, url, params=None, data=None, headers=None, retries=5, 
 def download_comments(youtube_id, sleep=.1):
     if r'\"isLiveContent\":true' in requests.get(YOUTUBE_VIDEO_URL.format(youtube_id=youtube_id)).text:
         print('Live stream detected! Not all comments may be downloaded.')
-        raise Exception('LiveContent')
-        # return download_comments_new_api(youtube_id, sleep)
+        # raise Exception('LiveContent')
+        return download_comments_new_api(youtube_id, sleep)
     return download_comments_old_api(youtube_id, sleep)
 
 
-# def download_comments_new_api(youtube_id, sleep=1):
-#     # Use the new youtube API to download some comments
-#     session = requests.Session()
-#     session.headers['User-Agent'] = USER_AGENT
-#     session.cookies.set_cookie(cookies)
-#
-#     response = session.get(YOUTUBE_VIDEO_URL.format(youtube_id=youtube_id))
-#     html = response.text
-#     session_token = find_value(html, 'XSRF_TOKEN', 3)
-#
-#     data = json.loads(find_value(html, 'window["ytInitialData"] = ', 0, '\n').rstrip(';'))
-#     for renderer in search_dict(data, 'itemSectionRenderer'):
-#         ncd = next(search_dict(renderer, 'nextContinuationData'), None)
-#         if ncd:
-#             break
-#     continuations = [(ncd['continuation'], ncd['clickTrackingParams'])]
-#
-#     while continuations:
-#         continuation, itct = continuations.pop()
-#         response = ajax_request(session, YOUTUBE_COMMENTS_AJAX_URL_NEW,
-#                                 params={'action_get_comments': 1,
-#                                         'pbj': 1,
-#                                         'ctoken': continuation,
-#                                         'continuation': continuation,
-#                                         'itct': itct},
-#                                 data={'session_token': session_token},
-#                                 headers={'X-YouTube-Client-Name': '1',
-#                                          'X-YouTube-Client-Version': '2.20200207.03.01'})
-#
-#         if not response:
-#             break
-#         if list(search_dict(response, 'externalErrorMessage')):
-#             raise RuntimeError('Error returned from server: ' + next(search_dict(response, 'externalErrorMessage')))
-#
-#         # Ordering matters. The newest continuations should go first.
-#         continuations = [(ncd['continuation'], ncd['clickTrackingParams'])
-#                          for ncd in search_dict(response, 'nextContinuationData')] + continuations
-#
-#         for comment in search_dict(response, 'commentRenderer'):
-#             yield {'cid': comment['commentId'],
-#                    'text': ''.join([c['text'] for c in comment['contentText']['runs']]),
-#                    'time': comment['publishedTimeText']['runs'][0]['text'],
-#                    'author': comment.get('authorText', {}).get('simpleText', ''),
-#                    'channel': comment['authorEndpoint']['browseEndpoint']['browseId'],
-#                    'votes': comment.get('voteCount', {}).get('simpleText', '0'),
-#                    'photo': comment['authorThumbnail']['thumbnails'][-1]['url']}
-#
-#         time.sleep(sleep)
+def download_comments_new_api(youtube_id, sleep=1):
+    # Use the new youtube API to download some comments
+    session = requests.Session()
+    session.headers['User-Agent'] = USER_AGENT
+    session.cookies.set_cookie(cookies)
+
+    response = session.get(YOUTUBE_VIDEO_URL.format(youtube_id=youtube_id))
+    html = response.text
+
+    start = html.rfind('"viewCount"') + 13
+    end = html.find('"', start)
+    # print(start, end, html[start:end])
+    view_count = int(html[start:end])
+
+    start = html.rfind('{"iconType":"LIKE"},"defaultText":{"accessibility":{"accessibilityData":{"label":"') + 82
+    end = html.find(' ', start)
+    likes = html[start:end]
+    if 'no' in likes:
+        likes = -1
+    else:
+        try:
+            likes = int(re.sub(',', '', likes))
+        except:
+            likes = -1
+
+    start = html.rfind('{"iconType":"DISLIKE"},"defaultText":{"accessibility":{"accessibilityData":{"label":"') + 85
+    end = html.find(' ', start)
+    dislikes = html[start:end]
+
+    if 'no' in dislikes:
+        dislikes = -1
+    else:
+        try:
+            dislikes = int(re.sub(',', '', dislikes))
+        except:
+            dislikes = -1
+
+    yield [view_count, likes, dislikes]
+
+    session_token = find_value(html, 'XSRF_TOKEN', 3)
+
+    data = json.loads(find_value(html, 'window["ytInitialData"] = ', 0, '\n').rstrip(';'))
+    for renderer in search_dict(data, 'itemSectionRenderer'):
+        ncd = next(search_dict(renderer, 'nextContinuationData'), None)
+        if ncd:
+            break
+    try:
+        continuations = [(ncd['continuation'], ncd['clickTrackingParams'])]
+    except:
+        return
+
+    count = 0
+    while continuations:
+        print(count)
+        continuation, itct = continuations.pop()
+        response = ajax_request(session, YOUTUBE_COMMENTS_AJAX_URL_NEW,
+                                params={'action_get_comments': 1,
+                                        'pbj': 1,
+                                        'ctoken': continuation,
+                                        'continuation': continuation,
+                                        'itct': itct},
+                                data={'session_token': session_token},
+                                headers={'X-YouTube-Client-Name': '1',
+                                         'X-YouTube-Client-Version': '2.20200207.03.01'})
+
+        if not response:
+            break
+        if list(search_dict(response, 'externalErrorMessage')):
+            raise RuntimeError('Error returned from server: ' + next(search_dict(response, 'externalErrorMessage')))
+
+        # Ordering matters. The newest continuations should go first.
+        continuations = [(ncd['continuation'], ncd['clickTrackingParams'])
+                         for ncd in search_dict(response, 'nextContinuationData')] + continuations
+
+        for comment in search_dict(response, 'commentRenderer'):
+            if "." in comment['commentId']:  # 답글 패스
+                continue
+            try:
+                text = ''.join([c['text'] for c in comment['contentText']['runs']])
+            except:
+                continue
+            yield {'cid': comment['commentId'],
+                   'text': text,
+                   'time': comment['publishedTimeText']['runs'][0]['text'],
+                   'author': comment.get('authorText', {}).get('simpleText', ''),
+                   'channel': comment['authorEndpoint']['browseEndpoint']['browseId'],
+                   'votes': comment.get('voteCount', {}).get('simpleText', '0'),
+                   'photo': comment['authorThumbnail']['thumbnails'][-1]['url']}
+            count += 1
+            if count >= 100:
+                continuations = None
+                break
+
+        time.sleep(1)
 
 
 def search_dict(partial, key):
@@ -126,6 +174,19 @@ def download_comments_old_api(youtube_id, sleep=1):
     start = html.rfind('"viewCount"') + 13
     end = html.find('"', start)
     # print(start, end, html[start:end])
+
+    if 'html' in html[start:end]:
+        conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="222.112.206.190",
+                           port="5432")
+        conn.autocommit = False
+        cur = conn.cursor()
+        sql = f"UPDATE video SET forbidden = TRUE WHERE video_id = '{youtube_id}'"
+        print("Unavailabel video")
+        cur.execute(sql)
+        conn.commit()
+        conn.close()
+        return
+
     view_count = int(html[start:end])
 
     start = html.rfind('{"iconType":"LIKE"},"defaultText":{"accessibility":{"accessibilityData":{"label":"') + 82
@@ -165,8 +226,11 @@ def download_comments_old_api(youtube_id, sleep=1):
 
     first_iteration = True
 
+    count = 0
+    # print('old')
     # Get remaining comments (the same as pressing the 'Show more' button)
     while page_token:
+        # print(count)
         data = {'video_id': youtube_id,
                 'session_token': session_token}
 
@@ -190,6 +254,10 @@ def download_comments_old_api(youtube_id, sleep=1):
             if comment['cid'] not in ret_cids:
                 ret_cids.append(comment['cid'])
                 yield comment
+                count += 1
+                if count >= 100:
+                    page_token = None
+                    break
 
         first_iteration = False
         time.sleep(sleep)
@@ -271,10 +339,11 @@ def main(video_id):
 
     try:
         # args = parser.parse_args(argv)
-
         youtube_id = video_id
+        time_control = True
+        do_sql = False
         # output = args.output
-        limit = 100
+        # limit = 100
 
         # if not youtube_id or not output:
         #     parser.print_usage()
@@ -299,6 +368,8 @@ def main(video_id):
         cur = conn.cursor()
 
         for comment in download_comments(youtube_id):
+            # if not do_sql:
+            #     print(comment)
             if first:
                 view_count, likes, dislikes = comment
 
@@ -307,8 +378,8 @@ def main(video_id):
                         VALUES ((SELECT idx FROM video WHERE video_id = '{video_id}'),'{view_count}', CURRENT_TIMESTAMP);
                         INSERT INTO video_likes (video_idx, likes, check_time, dislikes)
                         VALUES ((SELECT idx FROM video WHERE video_id = '{video_id}'),'{likes}', CURRENT_TIMESTAMP, '{dislikes}');"""
-
-                cur.execute(sql)
+                if do_sql:
+                    cur.execute(sql)
 
                 first = False
                 continue
@@ -340,26 +411,39 @@ def main(video_id):
                                 VALUES (var_comment_idx, '{comment['votes']}', CURRENT_TIMESTAMP);
                             END
                         $$;"""
-            cur.execute(sql)
+            if do_sql:
+                cur.execute(sql)
 
             count += 1
             sys.stdout.write('Downloaded %d comment(s)\r' % count)
             sys.stdout.flush()
 
-            if limit and count >= limit:
-                break
-
-        conn.commit()
+        if do_sql:
+            conn.commit()
         conn.close()
+
+        if time_control:
+            time_interval = time.time() - start_time
+
+            if time_interval <= 6:  # 속도 조절
+                time.sleep(6 - time_interval + random.random())
+
         print('\n[{:.2f} seconds] Done!'.format(time.time() - start_time))
         return True
 
     except Exception as e:
         print(traceback.format_exc())
         print('Error:', str(e))
+
+        if time_control:
+            time_interval = time.time() - start_time
+            if time_interval <= 6:  # 속도 조절
+                time.sleep(6 - time_interval + random.random())
+
+        print('\n[{:.2f} seconds] Done!'.format(time.time() - start_time))
         return False
         # sys.exit(1)
 
 
 if __name__ == "__main__":
-    main('d23MVB82PRU')
+    main('GMjc7Cc51ao')
