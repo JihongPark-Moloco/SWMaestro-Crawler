@@ -30,3 +30,5 @@ channel.basic_consume(queue='URL2', on_message_callback=callback, auto_ack=False
 
 print(' [*] Waiting for messages. To exit press CTRL+C')
 channel.start_consuming()
+
+# crawler.update_video_info('UU78PMQprrZTbU0IlMDsYZPw', 10)

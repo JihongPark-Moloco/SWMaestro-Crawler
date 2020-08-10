@@ -11,7 +11,7 @@ def loadUrls():
         cur = conn.cursor()
         # cur.execute("SELECT upload_id from channel;")
         cur.execute(
-            f"""SELECT upload_id FROM channel"""
+            f"""SELECT channel_id FROM channel WHERE status = TRUE"""
             # """SELECT channel_id FROM channel;"""
         )
             # """SELECT video_id FROM video WHERE upload_time BETWEEN CURRENT_TIMESTAMP - interval '3 MONTH' AND now();""")
