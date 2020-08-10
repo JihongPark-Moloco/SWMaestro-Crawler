@@ -6,13 +6,16 @@ import psycopg2 as pg2
 def loadUrls():
     conn = None
     try:
-        conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="222.112.206.190",
+        conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="13.124.107.195",
                            port="5432")
         cur = conn.cursor()
         # cur.execute("SELECT upload_id from channel;")
         cur.execute(
+            f"""SELECT upload_id FROM channel"""
+            # """SELECT channel_id FROM channel;"""
+        )
             # """SELECT video_id FROM video WHERE upload_time BETWEEN CURRENT_TIMESTAMP - interval '3 MONTH' AND now();""")
-            """SELECT DISTINCT video_id from video A LEFT JOIN video_views B ON A.idx = B.video_idx WHERE B.video_idx is NULL AND A.forbidden = FALSE;""")
+            # """SELECT DISTINCT video_id from video A LEFT JOIN video_views B ON A.idx = B.video_idx WHERE B.video_idx is NULL AND A.forbidden = FALSE;""")
         rows = cur.fetchall()
         newrows = [row[0] for row in rows]
         [print(row) for row in newrows]
@@ -33,7 +36,7 @@ channel = connection.channel()
 urls = loadUrls()
 for url in urls:
     channel.basic_publish(exchange='',
-                          routing_key='URL',
+                          routing_key='URL2',
                           body=url)
 print("Sending completed")
 
