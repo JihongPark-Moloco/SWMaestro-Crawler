@@ -3,6 +3,7 @@ import psycopg2 as pg2
 import pika
 import time
 import random
+import view_count_crawler
 
 # time.sleep(random.random() * 18)
 
@@ -20,7 +21,7 @@ channel.basic_qos(prefetch_count=1)
 def callback(ch, method, properties, body):
     print(" [x] Received %r" % body.decode())
 
-    if crawler.update_video_info(body.decode(), 10):
+    if view_count_crawler.do(body.decode()):
         channel.basic_ack(delivery_tag=method.delivery_tag, multiple=False)
     else:
         channel.basic_nack(delivery_tag=method.delivery_tag, multiple=False, requeue=False)

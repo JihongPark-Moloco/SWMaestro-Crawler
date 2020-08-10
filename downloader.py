@@ -14,6 +14,7 @@ import re
 import random
 import json
 
+IP = '13.124.107.195'
 YOUTUBE_VIDEO_URL = 'https://www.youtube.com/watch?v={youtube_id}'
 YOUTUBE_COMMENTS_AJAX_URL_OLD = 'https://www.youtube.com/comment_ajax'
 YOUTUBE_COMMENTS_AJAX_URL_NEW = 'https://www.youtube.com/comment_service_ajax'
@@ -39,7 +40,8 @@ def ajax_request(session, url, params=None, data=None, headers=None, retries=5, 
         if response.status_code in [403, 413]:
             return {}
         else:
-            time.sleep(sleep)
+            pass
+            # time.sleep(sleep)
 
 
 def download_comments(youtube_id, sleep=.1):
@@ -143,7 +145,7 @@ def download_comments_new_api(youtube_id, sleep=1):
                 continuations = None
                 break
 
-        time.sleep(1)
+        # time.sleep(1)
 
 
 def search_dict(partial, key):
@@ -176,7 +178,7 @@ def download_comments_old_api(youtube_id, sleep=1):
     # print(start, end, html[start:end])
 
     if 'html' in html[start:end]:
-        conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="222.112.206.190",
+        conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host=IP,
                            port="5432")
         conn.autocommit = False
         cur = conn.cursor()
@@ -260,7 +262,7 @@ def download_comments_old_api(youtube_id, sleep=1):
                     break
 
         first_iteration = False
-        time.sleep(sleep)
+        # time.sleep(sleep)
 
     # Get replies (the same as pressing the 'View all X replies' link)
     # for cid in reply_cids:
@@ -340,8 +342,8 @@ def main(video_id):
     try:
         # args = parser.parse_args(argv)
         youtube_id = video_id
-        time_control = True
-        do_sql = False
+        time_control = False
+        do_sql = True
         # output = args.output
         # limit = 100
 
@@ -362,7 +364,7 @@ def main(video_id):
         sys.stdout.flush()
         start_time = time.time()
 
-        conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="222.112.206.190",
+        conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host=IP,
                            port="5432")
         conn.autocommit = False
         cur = conn.cursor()
