@@ -10,6 +10,9 @@ import requests
 # crawler = New_YouTube_Crawler.YouTube_Crawler()
 # crawler.make_driver_ready()
 
+proxies = {'http': 'http://Paper9795:!As515951@us-wa.proxymesh.com:31280',
+           'https': 'http://Paper9795:!As515951@us-wa.proxymesh.com:31280'}
+
 credentials = pika.PlainCredentials('muna', 'muna112358!')
 connection = pika.BlockingConnection(pika.ConnectionParameters('13.124.107.195', 5672, '/',
                                                                credentials, heartbeat=10,
@@ -23,10 +26,6 @@ session = requests.Session()
 session.headers['User-Agent'] = USER_AGENT
 session.cookies.set_cookie(cookies)
 
-proxies = {
-    "http": 'http://5.79.73.131:13040',
-    "https": 'http://5.79.73.131:13040'
-}
 
 def callback(ch, method, properties, body):
     print(" [x] Received %r" % body.decode())
