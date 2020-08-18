@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import pika
-import YouTube_Crawler
+from Selenium_YouTube_Crawler import YouTube_Crawler
 
 credentials = pika.PlainCredentials('muna', 'muna112358!')
 connection = pika.BlockingConnection(pika.ConnectionParameters('13.124.107.195', 5672, '/',
