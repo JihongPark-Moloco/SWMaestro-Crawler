@@ -1,25 +1,45 @@
 # Crawler Repository
-MUNA 팀의 CreateTrend 프로젝트에서 필요한 데이터 수집에 활용되는
-크롤러 레포지토리입니다.
+## About The Project
+MUNA 팀의 CreateTrend 프로젝트에서 유튜브 트렌드 정보와 분석 인사이트 제공을 위한 유튜브 크롤러입니다.
+### Collecting Items
+#### 채널 정보
+- 채널 이름
+- 채널 설명
+- 개시 날짜
+- 구독자수
+- 채널 조회수
 
-## Crawlers
-#### Youtube
-유튜브 트렌드 정보와 분석 인사이트 제공을 위한 유튜브 크롤러입니다.
-#### Vling
-카테고리별 유튜브 채널을 분류하기 위해 참고할 데이터인 블링의 사이트를 크롤링하는 크롤러입니다.
-#### NoxInfluencer
-추가적인 데이터 수집과 빠른 기반 데이터 확보를 위한 NoxInfluencer 크롤러입니다.
+#### 영상 정보
+- 영상 제목
+- 영상 설명
+- 영상 업로드 날짜
+- 영상 추천/비추천 수
+- 영상 조회수
+- 영상 댓글 (영상별 추천순 상위 100개)
+- 영상 댓글별 추천수 
 
-## File Structure
-##### Nox_Crawler.py  
-셀레니움 기반의 녹스 인플루언서 크롤러입니다.  
-#####Vling_Crawler.py
-셀레니움 기반의 블링 크롤러입니다.  
-#####snedToRabitMQ.py
-크롤러 동작시 필요한 정보를 메세지 큐에 저장하는 일회성 소스입니다.
-#####Data_API_Youtube_Crawler      
-YouTube Data API V3와 프록시를 활용한 안정적인 유튜브 크롤러입니다. (현재 프로젝트에서 사용)
-#####Selenium_YouTube_Crawler
-Selenium을 기반으로 크롤링하는 이전 버전의 크롤러입니다. 불안정함으로 인해 사용 보류중입니다.
+### Built With
+현 프로젝트는 다음의 주요 서비스를 통해 개발되었습니다.
+* [YouTube Data API v3](https://developers.google.com/youtube/v3)
+* [Strom Proxies](https://stormproxies.com/)
 
-## 
+### PipeLine
+![image](https://13.125.91.162/swmaestro/muna-1/raw/master/images/NLP_pipeline.png)  
+1. 관리자가 직접 선정한 채널들의 channel_id를 수동으로 DataBase에 입력해줍니다.
+2. 정기적으로 크롤러가 작동하며 신규 입력된 채널의 채널 정보를 수집합니다.
+3. DB에 가지고있는 모든 채널 정보를 갱신합니다.
+4. 채널에 업로드된 신규 영상이 존재할경우 신규 영상 정보를 수집합니다.
+5. DB에 존재하는 모든 영상들의 영상 및 댓글 정보를 갱신합니다.
+
+### Crawler Structure
+#### YouTube Crawler
+New_YouTube_Crawler.py에 선언된 YouTube_Crawler 클래스를 통해 활용가능합니다.  
+함수는 다음의 종류가 존재합니다.
+- insert_channel_info(channel_id)  
+입력받은 channel_id를 통해 DB에 신규 채널 정보를 입력합니다.
+- update_channel_info(channel_id)  
+입력받은 channel_id의 채널 정보를 갱신합니다. 
+- update_video_and_comment(video_id)  
+입력받은 video_id의 영상 정보를 갱신하고 댓글을 수집합니다.
+- update_video_info(upload_id, interval_day=30):  
+입력받은 upload_id를 통해 신규 비디오의 정보를 DB에 수집합니다.

@@ -62,7 +62,7 @@ def getDriver():
     # options.add_argument("disable-gpu")
 
     # driver = Chrome(executable_path=r"/home/ubuntu/Crawler/chromedriver",
-    driver = Chrome(executable_path=r"chromedriver",
+    driver = Chrome(executable_path=r"D:\Cloud\Project\PyCharm\muna-3\Selenium_YouTube_Crawler\chromedriver.exe",
                     options=options)  # ,chrome_options=options
     driver.set_window_size(1920, 1080)
 
