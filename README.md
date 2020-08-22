@@ -24,7 +24,7 @@ MUNA 팀의 CreateTrend 프로젝트에서 유튜브 트렌드 정보와 분석 
 * [Strom Proxies](https://stormproxies.com/)
 
 ### PipeLine
-![image](https://13.125.91.162/swmaestro/muna-1/raw/master/images/NLP_pipeline.png)  
+![image](https://13.125.91.162/swmaestro/muna-3/blob/master/images/crawler_pipeline.png)  
 1. 관리자가 직접 선정한 채널들의 channel_id를 수동으로 DataBase에 입력해줍니다.
 2. 정기적으로 크롤러가 작동하며 신규 입력된 채널의 채널 정보를 수집합니다.
 3. DB에 가지고있는 모든 채널 정보를 갱신합니다.
