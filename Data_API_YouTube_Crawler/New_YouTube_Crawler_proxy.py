@@ -7,8 +7,9 @@ from Data_API_YouTube_Crawler import view_count_crawler
 
 # crawler = Data_API_YouTube_Crawler.YouTube_Crawler()
 # crawler.make_driver_ready()
-
-proxies = {"http": "http://37.48.118.4:13041", "https": "http://37.48.118.4:13041"}
+# 5035 ~ 5049
+ip = "69.46.80.226:5036"
+proxies = {"http": "http://"+ip, "https": "http://"+ip}
 
 credentials = pika.PlainCredentials("muna", "muna112358!")
 connection = pika.BlockingConnection(
@@ -34,7 +35,7 @@ session.cookies.set_cookie(cookies)
 
 
 def callback(ch, method, properties, body):
-    print(" [x] Received %r" % body.decode())
+    print(" [x] Received %r" % body.decode(), ip)
 
     if view_count_crawler.do(body.decode(), session, proxies):
         channel.basic_ack(delivery_tag=method.delivery_tag, multiple=False)

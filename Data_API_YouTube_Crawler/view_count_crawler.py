@@ -1,9 +1,8 @@
-import requests
-import json
 import re
+import sys
+import time
 import traceback
 import psycopg2 as pg2
-import time
 
 
 def do(video_id, session, proxies=None):
@@ -12,23 +11,20 @@ def do(video_id, session, proxies=None):
         IP = "13.124.107.195"
 
         conn = pg2.connect(
-            database="createtrend",
-            user="muna",
-            password="muna112358!",
-            host=IP,
-            port="5432",
+            database="createtrend", user="muna", password="muna112358!", host=IP, port="5432",
         )
         conn.autocommit = False
         cur = conn.cursor()
         cur.execute(f"SELECT idx FROM video WHERE video_id='{video_id}';")
         video_idx = cur.fetchall()[0][0]
 
-        res = session.get(
-            f"https://www.youtube.com/watch?v={video_id}", proxies=proxies
-        )
+        try:
+            res = session.get(f"https://www.youtube.com/watch?v={video_id}", proxies=proxies)
+        except:
+            sys.exit()
 
         if r'"reason":"Premieres' in res.text:
-            print("premier video")
+            # print("premier video")
             conn.close()
             return True
 
@@ -38,7 +34,7 @@ def do(video_id, session, proxies=None):
             in res.text
             or r'"status":"UNPLAYABLE"' in res.text
         ):
-            print("video has error")
+            # print("video has error")
             sql = f"UPDATE video SET status = FALSE WHERE video_id='{video_id}';"
             cur.execute(sql)
             conn.commit()
@@ -46,15 +42,64 @@ def do(video_id, session, proxies=None):
             return True
 
         if r"Sorry for the interruption." in res.text:
-            print("notwork volume error")
+            # print("network volume error")
             conn.commit()
             conn.close()
+            sys.exit()
+            # raise Exception('Network Volume Error')
             return False
+        try:
+            if "watching now" not in res.text:
+                view = res.text.split(r'{"videoViewCountRenderer":{"viewCount":{"simpleText":"')[
+                    1
+                ].split(" ")[0]
+            else:
+                view = "0"
+        except:
+            # print(res.text)
+            sys.exit()
 
-        view = res.text.split(
-            r'{"videoViewCountRenderer":{"viewCount":{"simpleText":"'
-        )[1].split(" ")[0]
-        view_count = int(re.sub(",", "", view))
+        try:
+            view_count = int(re.sub(",", "", view))
+        except:
+            view_count = 0
+
+        try:
+            if r'{"iconType":"LIKE"},"defaultText":{"simpleText":"Like"},"toggledText":{"simpleText":"Like"}' in res.text:
+                likes = 0
+            else:
+                likes = res.text.split(
+                    r'{"iconType":"LIKE"},"defaultText":{"accessibility":{"accessibilityData":{"label":"'
+                )[1].split(" ")[0]
+                if 'No' in likes:
+                    likes = 0
+                else:
+                    likes = int(re.sub(",", "", likes))
+
+            if r'{"iconType":"DISLIKE"},"defaultText":{"simpleText":"Dislike"},"toggledText":{"simpleText":"Dislike"}' in res.text:
+                dislikes = 0
+            else:
+                dislikes = res.text.split(
+                    r'{"iconType":"DISLIKE"},"defaultText":{"accessibility":{"accessibilityData":{"label":"'
+                )[1].split(" ")[0]
+                if 'No' in dislikes:
+                    dislikes = 0
+                else:
+                    dislikes = int(re.sub(",", "", dislikes))
+
+            sql = f"""INSERT INTO video_likes (video_idx, likes, check_time, dislikes)
+                     VALUES ((SELECT idx FROM video WHERE video_id = '{video_id}'),'{likes}', CURRENT_TIMESTAMP, '{dislikes}');"""
+
+            cur.execute(sql)
+
+        except Exception as e:
+            # print(res.text)
+            # print(e)
+            # traceback.print_exc()
+            conn.commit()
+            conn.close()
+            sys.exit()
+            return False
 
         tags = []
         for tag in res.text.split(r'<meta property="og:video:tag" content="')[1:]:
@@ -77,7 +122,7 @@ def do(video_id, session, proxies=None):
         conn.commit()
         conn.close()
 
-        print(f"{video_id}, {view_count}")
+        # print(f"{video_id}, {view_count}")
 
         # interval_time = start_time - time.time()
         # if interval_time <= 1:
@@ -89,10 +134,10 @@ def do(video_id, session, proxies=None):
             conn.close()
         except:
             pass
-        print(traceback.format_exc())
-        print("Error:", str(e))
-        with open("../file.txt", "w", encoding="UTF-8") as f:
-            f.write(res.text)
+        # print(traceback.format_exc())
+        # print("Error:", str(e))
+        # with open("../file.txt", "w", encoding="UTF-8") as f:
+        #     f.write(res.text)
 
         # interval_time = start_time - time.time()
         # if interval_time <= 1:

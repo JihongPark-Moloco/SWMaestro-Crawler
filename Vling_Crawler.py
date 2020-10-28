@@ -4,7 +4,7 @@ from selenium.webdriver.common.keys import Keys
 import time
 import pandas as pd
 
-button_xpath = '//*[@id="ETC"]'
+button_xpath = '//*[@id="FASHION"]'
 file_name = 'channels/ETC'
 
 options = webdriver.ChromeOptions()
