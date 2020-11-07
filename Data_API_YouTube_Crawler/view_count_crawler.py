@@ -1,13 +1,23 @@
+"""
+New_YouTube_Crawler_proxy_APP에서 호출되는 영상 조회수 수집 크롤러입니다.
+"""
+
 import re
 import sys
-import time
 import traceback
+
 import psycopg2 as pg2
 
 
 def do(video_id, session, proxies=None):
+    """
+    영상 조회수를 수집해 DB에 반영합니다.
+    :param video_id: 영상 고유 ID 값
+    :param session: requests 동작시 사용할 session 값
+    :param proxies: 프록시 수행을 위한 설정 값
+    :return: None
+    """
     try:
-        start_time = time.time()
         IP = "13.124.107.195"
 
         conn = pg2.connect(
@@ -23,31 +33,36 @@ def do(video_id, session, proxies=None):
         except:
             sys.exit()
 
+        # 공개 예정 영상
         if r'"reason":"Premieres' in res.text:
-            # print("premier video")
+            print("premier video")
             conn.close()
             return True
 
+        # 비공개 처리된 영상
         if (
             r'"playabilityStatus":{"status":"ERROR"' in res.text
             or r'"playabilityStatus":{"status":"LOGIN_REQUIRED","messages":["This is a private video.'
             in res.text
             or r'"status":"UNPLAYABLE"' in res.text
         ):
-            # print("video has error")
+            print("video has error")
             sql = f"UPDATE video SET status = FALSE WHERE video_id='{video_id}';"
             cur.execute(sql)
             conn.commit()
             conn.close()
             return True
 
+        # 네트워크 트래픽 초과 에러
         if r"Sorry for the interruption." in res.text:
-            # print("network volume error")
+            print("network volume error")
             conn.commit()
             conn.close()
             sys.exit()
-            # raise Exception('Network Volume Error')
+            raise Exception("Network Volume Error")
             return False
+        
+        # 실시간 방송중인 영상
         try:
             if "watching now" not in res.text:
                 view = res.text.split(r'{"videoViewCountRenderer":{"viewCount":{"simpleText":"')[
@@ -56,7 +71,6 @@ def do(video_id, session, proxies=None):
             else:
                 view = "0"
         except:
-            # print(res.text)
             sys.exit()
 
         try:
@@ -64,25 +78,32 @@ def do(video_id, session, proxies=None):
         except:
             view_count = 0
 
+        # 좋아요와 싫어요수 수집
         try:
-            if r'{"iconType":"LIKE"},"defaultText":{"simpleText":"Like"},"toggledText":{"simpleText":"Like"}' in res.text:
+            if (
+                r'{"iconType":"LIKE"},"defaultText":{"simpleText":"Like"},"toggledText":{"simpleText":"Like"}'
+                in res.text
+            ):
                 likes = 0
             else:
                 likes = res.text.split(
                     r'{"iconType":"LIKE"},"defaultText":{"accessibility":{"accessibilityData":{"label":"'
                 )[1].split(" ")[0]
-                if 'No' in likes:
+                if "No" in likes:
                     likes = 0
                 else:
                     likes = int(re.sub(",", "", likes))
 
-            if r'{"iconType":"DISLIKE"},"defaultText":{"simpleText":"Dislike"},"toggledText":{"simpleText":"Dislike"}' in res.text:
+            if (
+                r'{"iconType":"DISLIKE"},"defaultText":{"simpleText":"Dislike"},"toggledText":{"simpleText":"Dislike"}'
+                in res.text
+            ):
                 dislikes = 0
             else:
                 dislikes = res.text.split(
                     r'{"iconType":"DISLIKE"},"defaultText":{"accessibility":{"accessibilityData":{"label":"'
                 )[1].split(" ")[0]
-                if 'No' in dislikes:
+                if "No" in dislikes:
                     dislikes = 0
                 else:
                     dislikes = int(re.sub(",", "", dislikes))
@@ -93,9 +114,7 @@ def do(video_id, session, proxies=None):
             cur.execute(sql)
 
         except Exception as e:
-            # print(res.text)
-            # print(e)
-            # traceback.print_exc()
+            traceback.print_exc()
             conn.commit()
             conn.close()
             sys.exit()
@@ -122,36 +141,14 @@ def do(video_id, session, proxies=None):
         conn.commit()
         conn.close()
 
-        # print(f"{video_id}, {view_count}")
-
-        # interval_time = start_time - time.time()
-        # if interval_time <= 1:
-        #     time.sleep(1 - interval_time)
-
         return True
     except Exception as e:
         try:
             conn.close()
         except:
             pass
-        # print(traceback.format_exc())
-        # print("Error:", str(e))
-        # with open("../file.txt", "w", encoding="UTF-8") as f:
-        #     f.write(res.text)
-
-        # interval_time = start_time - time.time()
-        # if interval_time <= 1:
-        #     time.sleep(1 - interval_time)
+        print(traceback.format_exc())
+        with open("../file.txt", "w", encoding="UTF-8") as f:
+            f.write(res.text)
 
         return False
-
-
-# proxies = {"http": "http://5.79.73.131:13040", "https": "http://5.79.73.131:13040"}
-# USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36"
-# cookies = requests.cookies.create_cookie(
-#     domain=".youtube.com", name="PREF", value="gl=US&hl=en"
-# )
-# session = requests.Session()
-# session.headers["User-Agent"] = USER_AGENT
-# session.cookies.set_cookie(cookies)
-# do("lL7VznCnsMI", session, proxies)

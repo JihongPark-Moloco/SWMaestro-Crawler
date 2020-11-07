@@ -1,4 +1,7 @@
-#!/usr/bin/env python3
+"""
+메세지큐에서 가져온 메세지로 유튜브 크롤러를 실행시키는 역할을합니다.
+현재는 사용하지 않습니다.
+"""
 
 import pika
 from Selenium_YouTube_Crawler import YouTube_Crawler

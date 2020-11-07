@@ -1,15 +1,14 @@
+"""
+supervisor.py에 호출되는 영상 정보 수집 크롤러입니다.
+Rotating Proxy 서비스와 requests 라이브러리를 통해 동작합니다.
+"""
+
 import sys
 
 import pika
 import requests
 
-# from Data_API_YouTube_Crawler import view_count_crawler
 import view_count_crawler
-# time.sleep(random.random() * 18)
-
-# crawler = Data_API_YouTube_Crawler.YouTube_Crawler()
-# crawler.make_driver_ready()
-
 
 credentials = pika.PlainCredentials("muna", "muna112358!")
 
@@ -41,7 +40,7 @@ def do():
     session.cookies.set_cookie(cookies)
 
     def callback(ch, method, properties, body):
-        # print(" [x] Received %r" % body.decode(), ip)
+        print(" [x] Received %r" % body.decode(), ip)
 
         if view_count_crawler.do(body.decode(), session, proxies):
             channel.basic_ack(delivery_tag=method.delivery_tag, multiple=False)
@@ -50,11 +49,10 @@ def do():
 
     channel.basic_consume(queue="video_crawler", on_message_callback=callback, auto_ack=False)
 
-    # print(" [*] Waiting for messages. To exit press CTRL+C")
+    print(" [*] Waiting for messages. To exit press CTRL+C")
     channel.start_consuming()
 
-    # crawler.update_video_info('UU78PMQprrZTbU0IlMDsYZPw', 10)
 
-
+# 테스트 동작을 위한 메인문
 if __name__ == "__main__":
     do()

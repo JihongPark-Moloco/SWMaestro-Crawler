@@ -1,20 +1,19 @@
-import pika
-import New_YouTube_Crawler
-import requests
+"""
+신규 채널 정보 입력에 사용되는 소스입니다.
+기존 DB에 존재하지 않는 채널을 신규로 등록할때 사용합니다.
+YouTube Data API v3를 통해 수행됩니다.
+"""
 
-# time.sleep(random.random() * 18)
+import pika
+
+import New_YouTube_Crawler
 
 crawler = New_YouTube_Crawler.YouTube_Crawler()
 
 credentials = pika.PlainCredentials("muna", "muna112358!")
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(
-        "13.124.107.195",
-        5672,
-        "/",
-        credentials,
-        heartbeat=10,
-        blocked_connection_timeout=10,
+        "13.124.107.195", 5672, "/", credentials, heartbeat=10, blocked_connection_timeout=10,
     )
 )
 
@@ -28,14 +27,10 @@ def callback(ch, method, properties, body):
     if crawler.insert_channel_info(body.decode()):
         channel.basic_ack(delivery_tag=method.delivery_tag, multiple=False)
     else:
-        channel.basic_nack(
-            delivery_tag=method.delivery_tag, multiple=False, requeue=False
-        )
+        channel.basic_nack(delivery_tag=method.delivery_tag, multiple=False, requeue=False)
 
 
 channel.basic_consume(queue="URL2", on_message_callback=callback, auto_ack=False)
 
 print(" [*] Waiting for messages. To exit press CTRL+C")
 channel.start_consuming()
-
-# crawler.update_video_info('UU78PMQprrZTbU0IlMDsYZPw', 10)
