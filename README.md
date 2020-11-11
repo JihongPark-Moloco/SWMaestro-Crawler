@@ -98,3 +98,6 @@ MUNA 팀의 CreateTrend 프로젝트에서 유튜브 정보를 수집하기 위�
 ##### playlistItems  
 [API playlistItems](https://developers.google.com/youtube/v3/docs/playlistItems?hl=ko)
 채널별 고유 upload_id를 이용해 채널의 모든 영상 정보를 가져옵니다.  
+
+## Authors
+- **박지홍(qkrwlghddlek@naver.com)**
