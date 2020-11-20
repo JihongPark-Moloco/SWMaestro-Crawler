@@ -23,7 +23,7 @@ MUNA 팀의 CreateTrend 프로젝트에서 유튜브 정보를 수집하기 위�
 * [Rotating Proxies](https://rotatingproxies.com/)
 
 ### PipeLine
-![크롤러_파이프라인](/uploads/8f04ce6a0cd11197d0e015c3345f922a/크롤러_파이프라인.jpg)  
+![image](https://user-images.githubusercontent.com/50457791/99808884-ddb16500-2b84-11eb-87da-bd64c2ec8ac4.png)  
 크롤러 동작은 3단계로 이루어집니다.
 1. 채널 정보 갱신  
   채널의 조회수, 활성화 여부, 구독자수등의 정보를 업데이트합니다.
