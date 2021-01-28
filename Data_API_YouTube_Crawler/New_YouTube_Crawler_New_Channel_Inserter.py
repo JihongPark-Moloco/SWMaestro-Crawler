@@ -8,12 +8,16 @@ import pika
 
 import New_YouTube_Crawler
 
+ip = #ip
+id = #id
+pw = #pw
+
 crawler = New_YouTube_Crawler.YouTube_Crawler()
 
-credentials = pika.PlainCredentials("muna", "muna112358!")
+credentials = pika.PlainCredentials(id, pw)
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(
-        "13.124.107.195", 5672, "/", credentials, heartbeat=10, blocked_connection_timeout=10,
+        ip, 5672, "/", credentials, heartbeat=10, blocked_connection_timeout=10,
     )
 )
 
