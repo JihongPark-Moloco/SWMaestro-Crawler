@@ -8,6 +8,13 @@ import traceback
 
 import psycopg2 as pg2
 
+database = #database
+user = #uesr
+password = #password
+IP = "13.124.107.195"
+id = #id
+pw = #pw
+
 
 def do(video_id, session, proxies=None):
     """
@@ -18,10 +25,12 @@ def do(video_id, session, proxies=None):
     :return: None
     """
     try:
-        IP = "13.124.107.195"
-
         conn = pg2.connect(
-            database="createtrend", user="muna", password="muna112358!", host=IP, port="5432",
+            database = database,
+            user = user, 
+            password = password,
+            host=IP,
+            port="5432",
         )
         conn.autocommit = False
         cur = conn.cursor()
