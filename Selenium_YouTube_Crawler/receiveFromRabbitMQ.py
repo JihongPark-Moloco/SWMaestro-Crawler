@@ -6,8 +6,8 @@
 import pika
 from Selenium_YouTube_Crawler import YouTube_Crawler
 
-credentials = pika.PlainCredentials('muna', 'muna112358!')
-connection = pika.BlockingConnection(pika.ConnectionParameters('13.124.107.195', 5672, '/',
+credentials = pika.PlainCredentials(None, None)
+connection = pika.BlockingConnection(pika.ConnectionParameters(None, 5672, '/',
                                                                credentials, heartbeat=0,
                                                                blocked_connection_timeout=None))
 channel = connection.channel()
@@ -38,7 +38,7 @@ channel.start_consuming()
 
 # while True:
 #     try:
-#         connection = pika.BlockingConnection(pika.ConnectionParameters('13.124.107.195', 5672, '/',
+#         connection = pika.BlockingConnection(pika.ConnectionParameters(None, 5672, '/',
 #                                                                        credentials, heartbeat=0,
 #                                                                        blocked_connection_timeout=None))
 #         channel = connection.channel()
@@ -55,7 +55,7 @@ channel.start_consuming()
 
 #     if YouTube_Crawler.main(body.decode()):
 #         try:
-#             connection = pika.BlockingConnection(pika.ConnectionParameters('13.124.107.195', 5672, '/',
+#             connection = pika.BlockingConnection(pika.ConnectionParameters(None, 5672, '/',
 #                                                                            credentials, heartbeat=0,
 #                                                                            blocked_connection_timeout=None))
 #             channel = connection.channel()
@@ -70,7 +70,7 @@ channel.start_consuming()
 
 #     else:
 #         try:
-#             connection = pika.BlockingConnection(pika.ConnectionParameters('13.124.107.195', 5672, '/',
+#             connection = pika.BlockingConnection(pika.ConnectionParameters(None, 5672, '/',
 #                                                                            credentials, heartbeat=0,
 #                                                                            blocked_connection_timeout=None))
 #             channel = connection.channel()
