@@ -37,11 +37,11 @@ for name in ll:
     plus_channels = set(df["channel_id"].values)
 
     conn = pg2.connect(
-        database="createtrend",
-        user="muna",
-        password="muna112358!",
-        host="ec2-13-124-107-195.ap-northeast-2.compute.amazonaws.com",
-        port="5432",
+        database=None,
+        user=None,
+        password=None,
+        host=None,
+        port=None,
     )
     conn.autocommit = False
     cur = conn.cursor()
