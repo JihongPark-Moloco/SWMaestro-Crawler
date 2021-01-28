@@ -8,12 +8,19 @@ import psycopg2 as pg2
 
 import New_YouTube_Crawler
 
+database = #database
+user = #uesr
+password = #password
+ip = #ip
+id = #id
+pw = #pw
+
 crawler = New_YouTube_Crawler.YouTube_Crawler()
 
-credentials = pika.PlainCredentials("muna", "muna112358!")
+credentials = pika.PlainCredentials(id, pw)
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(
-        "13.124.107.195", 5672, "/", credentials, heartbeat=10, blocked_connection_timeout=10,
+        ip, 5672, "/", credentials, heartbeat=10, blocked_connection_timeout=10,
     )
 )
 
@@ -25,11 +32,11 @@ def callback(ch, method, properties, body):
     print(" [x] Received %r" % body.decode())
 
     conn = pg2.connect(
-        database="createtrend",
-        user="muna",
-        password="muna112358!",
-        host="13.124.107.195",
-        port="5432",
+        database = database,
+        user = user,
+        password = password,
+        host = ip,
+        port = "5432",
     )
     conn.autocommit = False
     cur = conn.cursor()
