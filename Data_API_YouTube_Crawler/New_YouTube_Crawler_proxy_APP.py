@@ -10,7 +10,12 @@ import requests
 
 import view_count_crawler
 
-credentials = pika.PlainCredentials("muna", "muna112358!")
+ip = #ip
+id = #id
+pw = #pw
+proxy_ip = #proxy_ip
+
+credentials = pika.PlainCredentials(id, pw)
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36"
 cookies = requests.cookies.create_cookie(domain=".youtube.com", name="PREF", value="gl=US&hl=en")
@@ -24,12 +29,12 @@ def do():
         print("Not Acceptable Port Number", port)
         return
 
-    ip = "69.46.80.226:" + port
+    ip = f"{proxy_ip}:" + port
     proxies = {"http": "http://" + ip, "https": "http://" + ip}
 
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(
-            "13.124.107.195", 5672, "/", credentials, heartbeat=10, blocked_connection_timeout=10,
+            ip, 5672, "/", credentials, heartbeat=10, blocked_connection_timeout=10,
         )
     )
     channel = connection.channel()
