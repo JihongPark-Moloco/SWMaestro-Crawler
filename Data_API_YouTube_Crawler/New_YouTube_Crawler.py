@@ -19,7 +19,10 @@ class YouTube_Crawler:
     kwonjun_api_key = None
     kyungsu_api_key = None
     is_driver = False
-    IP = "13.124.107.195"
+    IP = #IP
+    database = #database
+    user = #user
+    password = #password
 
     def __init__(self, api_key=None):
         if api_key is not None:
@@ -102,11 +105,11 @@ class YouTube_Crawler:
                 check = item["statistics"]["subscriberCount"]
             except:
                 conn = pg2.connect(
-                    database="createtrend",
-                    user="muna",
-                    password="muna112358!",
-                    host=self.IP,
-                    port="5432",
+                    database = self.database,
+                    user = self.user,
+                    password = self.password,
+                    host = self.IP,
+                    port = "5432",
                 )
                 conn.autocommit = False
                 cur = conn.cursor()
@@ -117,11 +120,11 @@ class YouTube_Crawler:
                 return True
 
             conn = pg2.connect(
-                database="createtrend",
-                user="muna",
-                password="muna112358!",
-                host=self.IP,
-                port="5432",
+                database = self.database,
+                user = self.user,
+                password = self.password,
+                host = self.IP,
+                port = "5432",
             )
             conn.autocommit = False
             cur = conn.cursor()
@@ -154,10 +157,10 @@ class YouTube_Crawler:
             item = dict(*result["items"])
 
             conn = pg2.connect(
-                database="createtrend",
-                user="muna",
-                password="muna112358!",
-                host="ec2-13-124-107-195.ap-northeast-2.compute.amazonaws.com",
+                database = database,
+                user = user,
+                password = password,
+                host = self.IP,
                 port="5432",
             )
             conn.autocommit = False
@@ -198,11 +201,11 @@ class YouTube_Crawler:
             keep_going = True
 
             conn = pg2.connect(
-                database="createtrend",
-                user="muna",
-                password="muna112358!",
-                host="ec2-13-124-107-195.ap-northeast-2.compute.amazonaws.com",
-                port="5432",
+                database = self.database,
+                user = self.user,
+                password = self.password,
+                host = self.IP,
+                port = "5432",
             )
             conn.autocommit = False
             cur = conn.cursor()
