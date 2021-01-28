@@ -512,7 +512,7 @@ def toSql():
     # comment_savedata.to_csv('comment_savedata.csv')
 
     conn = pg2.connect(
-        database="createtrend", user="muna", password="muna112358!", host="54.180.25.4", port="5432"
+        database=None, user=None, password=None, host=None, port=None
     )
     conn.autocommit = False
     cur = conn.cursor()
