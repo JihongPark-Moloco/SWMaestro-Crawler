@@ -7,6 +7,10 @@ import pika
 import sys
 import New_YouTube_Crawler
 
+id = #id
+pw = #pw
+ip = #ip
+
 
 def do():
     """
@@ -16,10 +20,10 @@ def do():
     crawler = New_YouTube_Crawler.YouTube_Crawler()
     api_set = sys.argv[1]
 
-    credentials = pika.PlainCredentials("muna", "muna112358!")
+    credentials = pika.PlainCredentials(id, pw)
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(
-            "13.124.107.195",
+            ip,
             5672,
             "/",
             credentials,
