@@ -30,6 +30,10 @@ import requests
 
 import sendToRabbitMQ
 
+id = #id
+pw = #pw
+ip = #ip
+
 
 # 0: channel updater Crawler 수행
 # 채널 정보를 업데이트합니다.
@@ -66,8 +70,8 @@ pro_3 = subprocess.Popen(
 while True:
     time.sleep(10)
     session = requests.Session()
-    session.auth = ("muna", "muna112358!")
-    res = session.get(r"http://13.124.107.195:30000/api/queues/%2f/channel_updater")
+    session.auth = (id, pw)
+    res = session.get(f"http://{ip}:30000/api/queues/%2f/channel_updater")
     res = json.loads(res.text)
     if res["backing_queue_status"]["len"] == 0:
         pro_1.kill()
@@ -124,8 +128,8 @@ pro_3 = subprocess.Popen(
 while True:
     time.sleep(10)
     session = requests.Session()
-    session.auth = ("muna", "muna112358!")
-    res = session.get(r"http://13.124.107.195:30000/api/queues/%2f/video_inserter")
+    session.auth = (id, pw)
+    res = session.get(f"http://{ip}:30000/api/queues/%2f/video_inserter")
     res = json.loads(res.text)
     if res["backing_queue_status"]["len"] == 0:
         pro_1.kill()
@@ -174,8 +178,8 @@ while True:
             port_dict[port_num] = pro.pid
 
     session = requests.Session()
-    session.auth = ("muna", "muna112358!")
-    res = session.get(r"http://13.124.107.195:30000/api/queues/%2f/video_crawler")
+    session.auth = (id, pw)
+    res = session.get(f"http://{ip:30000/api/queues/%2f/video_crawler")
     res = json.loads(res.text)
 
     # 남은 메세지수가 0이면 종료합니다.
