@@ -20,10 +20,14 @@ import requests
 from lxml.cssselect import CSSSelector
 
 # 기본 파라미터 설정
-IP = "13.124.107.195"
+IP = #IP
 YOUTUBE_VIDEO_URL = "https://www.youtube.com/watch?v={youtube_id}"
 YOUTUBE_COMMENTS_AJAX_URL_OLD = "https://www.youtube.com/comment_ajax"
 YOUTUBE_COMMENTS_AJAX_URL_NEW = "https://www.youtube.com/comment_service_ajax"
+
+database = #database
+user = #uesr
+password = #password
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36"
 cookies = requests.cookies.create_cookie(domain=".youtube.com", name="PREF", value="gl=US&hl=en")
@@ -214,7 +218,11 @@ def download_comments_old_api(youtube_id, sleep=1):
 
     if "html" in html[start:end]:
         conn = pg2.connect(
-            database="createtrend", user="muna", password="muna112358!", host=IP, port="5432",
+            database = database,
+            user = user,
+            password = password,
+            host=IP,
+            port="5432",
         )
         conn.autocommit = False
         cur = conn.cursor()
@@ -369,7 +377,11 @@ def main(video_id):
         start_time = time.time()
 
         conn = pg2.connect(
-            database="createtrend", user="muna", password="muna112358!", host=IP, port="5432",
+            database = database,
+            user = user,
+            password = password,
+            host = IP,
+            port="5432",
         )
         conn.autocommit = False
         cur = conn.cursor()
