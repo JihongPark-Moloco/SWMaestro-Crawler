@@ -6,14 +6,23 @@ RabbitMQ에 크롤러 동작을 위한 channel_id, upload_id, video_id를 저장
 import pika
 import psycopg2 as pg2
 
+id = #id
+pw = #pw
+ip = #ip
+
+database = #database
+user = #user
+password = #password
+host = #host
+
 def send(t):
-    credentials = pika.PlainCredentials('muna', 'muna112358!')
-    connection = pika.BlockingConnection(pika.ConnectionParameters('13.124.107.195', 5672, '/', credentials))
+    credentials = pika.PlainCredentials(id, pw)
+    connection = pika.BlockingConnection(pika.ConnectionParameters(ip, 5672, '/', credentials))
     channel = connection.channel()
     conn = None
 
     try:
-        conn = pg2.connect(database="createtrend", user="muna", password="muna112358!", host="13.124.107.195",
+        conn = pg2.connect(database=database, user=user, password=password, host=host,
                            port="5432")
         cur = conn.cursor()
         # cur.execute("SELECT upload_id from channel;")
